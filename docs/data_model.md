@@ -164,8 +164,9 @@ Thin join used only if a file is request-specific before conversion; general fil
 |---|---|---|
 | id | uuid PK | |
 | organization_id | uuid FK | |
-| order_number | text | org-scoped sequential, e.g. `PF-1042` |
+| order_number | text | org-scoped sequential, e.g. `ORD-1042` |
 | customer_id | uuid FK | |
+| title | text | short free-text label; required by Quick Entry (product_requirements.md §8), added in migration 0017 |
 | order_type | text | `custom` / `existing_product` / `bulk` / `service` |
 | requires_production | boolean | for `bulk` type, selects which workflow status set applies (see `product_requirements.md` §10) |
 | source | text | same enum as requests.source |

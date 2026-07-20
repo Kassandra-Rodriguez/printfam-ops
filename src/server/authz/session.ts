@@ -1,9 +1,11 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { listMembershipsForCurrentUser, type MembershipWithOrg } from "@/server/data/organizations";
 
 export type OrgContext = {
+  supabase: SupabaseClient;
   userId: string;
   email: string;
   memberships: MembershipWithOrg[];
@@ -45,6 +47,7 @@ export async function requireOrgContext(): Promise<OrgContext> {
   }
 
   return {
+    supabase,
     userId: user.id,
     email: user.email ?? "",
     memberships,

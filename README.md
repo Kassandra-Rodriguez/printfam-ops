@@ -83,17 +83,29 @@ organization's Owner and seeds the default status workflows from
 `docs/product_requirements.md` §9 — there is no separate "seed my data" step needed to
 start using the shell.
 
-## What's built vs. not yet (Phase 2 of `docs/build_phases.md`)
+## What's built vs. not yet (Phases 2–3 of `docs/build_phases.md`)
 
-Live: auth (sign up/log in/log out), organization creation, role/membership schema,
-the full database schema with RLS enabled on every tenant table, the responsive app
-shell and navigation, and a Settings page showing the organization and its members.
+Live: auth, organization creation, the full database schema with RLS on every tenant
+table, the responsive app shell — plus, from Phase 3, the workflow this whole build
+sequence was aimed at: customer creation (with duplicate-detection warnings), manual
+order creation in both Quick Entry and Detailed Entry (including the "backfill history"
+flow for entering an order that's already mid-production, with backdated statuses and
+payments), the orders list and order detail page (status changes, payment recording,
+file uploads, linked tasks), a standalone Tasks view, and a dashboard attention list
+driven by real order/task data (overdue orders, due-soon orders, unpaid balances,
+overdue/today's tasks).
 
-Not yet: every entity screen (Customers, Orders, Requests, Repairs, Quotes, Inbox,
-Tasks, Inventory, Reports) is a real route with an honest "ships in Phase N" state
-rather than a fake/dead control — per the coding standard against placeholder actions
-that do nothing. Phase 3 (`docs/build_phases.md`) builds manual order entry next; that's
-the milestone that makes this usable for PrintFam's actual current orders.
+Not yet: Requests, Repairs, Quotes, Inbox, Inventory, and Reports are each a real route
+with an honest "ships in Phase N" state rather than a fake/dead control — per the coding
+standard against placeholder actions that do nothing.
+
+**Not yet runtime-verified.** This was built and scaffolded in an environment without
+Docker, so — same caveat as the schema itself — everything above passes `npx tsc --noEmit`,
+`npm run lint`, and a full `next build`, but has not been exercised against a live
+Supabase instance or a real browser. Before trusting it: `npx supabase start`, `npm run
+dev`, and walk through sign up → create org → create a customer → create an order (try
+both Quick Entry and a backdated Detailed Entry order) → record a payment → add a task →
+confirm it all shows up correctly on `/dashboard`.
 
 ## Testing
 
