@@ -61,7 +61,8 @@ export async function getOrder(supabase: SupabaseClient, id: string) {
        order_items(*),
        order_status_history(id, changed_at, source, note, status:workflow_statuses(label, category)),
        payments(id, amount, method, kind, paid_at, reference_number, notes, created_at),
-       tasks(id, title, status, due_date, priority, assigned_user_id, order_id, customer_id)`,
+       tasks(id, title, status, due_date, priority, assigned_user_id, order_id, customer_id),
+       conversations(id, channel, messages(id, body, direction, occurred_at))`,
     )
     .eq("id", id)
     .maybeSingle();

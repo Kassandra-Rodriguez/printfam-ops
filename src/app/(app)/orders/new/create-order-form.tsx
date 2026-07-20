@@ -48,31 +48,39 @@ type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 type EntityType = "order_custom" | "order_existing_product" | "order_service";
 
-const defaultValues: CreateOrderInput = {
-  customerId: "",
-  title: "",
-  orderType: "custom",
-  requiresProduction: true,
-  statusId: "",
-  totalAmount: undefined,
-  items: [],
-  promisedDate: "",
-  internalDeadline: "",
-  notes: "",
-  discountTotal: 0,
-  taxTotal: 0,
-  shippingCost: 0,
-  depositRequired: 0,
-  backfillStatuses: [],
-  backfillPayments: [],
-};
+function buildDefaultValues(initialCustomerId?: string, initialTitle?: string): CreateOrderInput {
+  return {
+    customerId: initialCustomerId ?? "",
+    title: initialTitle ?? "",
+    orderType: "custom",
+    requiresProduction: true,
+    statusId: "",
+    totalAmount: undefined,
+    items: [],
+    promisedDate: "",
+    internalDeadline: "",
+    notes: "",
+    discountTotal: 0,
+    taxTotal: 0,
+    shippingCost: 0,
+    depositRequired: 0,
+    backfillStatuses: [],
+    backfillPayments: [],
+  };
+}
 
 export function CreateOrderForm({
   customers,
   statusesByEntityType,
+  convertedFromRequestId,
+  initialCustomerId,
+  initialTitle,
 }: {
   customers: { id: string; name: string }[];
   statusesByEntityType: Record<EntityType, WorkflowStatus[]>;
+  convertedFromRequestId?: string;
+  initialCustomerId?: string;
+  initialTitle?: string;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"quick" | "detailed">("quick");
@@ -81,7 +89,7 @@ export function CreateOrderForm({
 
   const form = useForm<CreateOrderInput>({
     resolver: zodResolver(createOrderSchema),
-    defaultValues,
+    defaultValues: buildDefaultValues(initialCustomerId, initialTitle),
   });
 
   const itemsArray = useFieldArray({ control: form.control, name: "items" });
@@ -104,8 +112,10 @@ export function CreateOrderForm({
   }, [entityType]);
 
   // Draft persistence (docs/product_requirements.md §8: "Allow drafts so
-  // unfinished order entry is not lost") — restore once on mount.
+  // unfinished order entry is not lost") — restore once on mount. Skipped when
+  // converting a request: that prefill should win over an unrelated old draft.
   useEffect(() => {
+    if (convertedFromRequestId) return;
     const saved = window.localStorage.getItem(DRAFT_KEY);
     if (saved) {
       try {
@@ -127,14 +137,16 @@ export function CreateOrderForm({
 
   function discardDraft() {
     window.localStorage.removeItem(DRAFT_KEY);
-    form.reset(defaultValues);
+    form.reset(buildDefaultValues(initialCustomerId, initialTitle));
     setRestoredDraft(false);
   }
 
   async function onSubmit(values: CreateOrderInput) {
     setSubmitting(true);
-    const payload: CreateOrderInput =
-      mode === "quick" ? { ...values, items: [], backfillStatuses: [], backfillPayments: [] } : values;
+    const payload: CreateOrderInput = {
+      ...(mode === "quick" ? { ...values, items: [], backfillStatuses: [], backfillPayments: [] } : values),
+      convertedFromRequestId,
+    };
 
     const result = await createOrderAction(payload);
     setSubmitting(false);

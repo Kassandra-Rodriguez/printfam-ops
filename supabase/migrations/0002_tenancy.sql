@@ -80,6 +80,58 @@ create table organization_members (
 create index organization_members_org_idx on organization_members(organization_id);
 create index organization_members_user_idx on organization_members(user_id);
 
+-- Tenant isolation is membership-based, not "active org in JWT": a user may belong to
+-- several organizations (docs/user_roles.md #4), and RLS should allow access to every
+-- organization they're a member of. The *active* organization for a given UI session is
+-- an application-layer concern (docs/architecture.md #3), enforced in addition to this,
+-- not instead of it.
+--
+-- `language sql` (not plpgsql), so this must come after organization_members exists —
+-- Postgres validates a SQL-language function body against the catalog at CREATE
+-- FUNCTION time, unlike plpgsql. See the note in 0001_setup.sql.
+create or replace function app_private.is_org_member(p_organization_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from organization_members m
+    where m.organization_id = p_organization_id
+      and m.user_id = auth.uid()
+      and m.status = 'active'
+  );
+$$;
+
+-- Role check used by RLS policies that need Owner/Manager-only write access
+-- (e.g. organization_settings, workflow_statuses). Team Member's narrower
+-- "assigned records only" scope is enforced at the application layer
+-- (docs/security.md #2) since it depends on per-entity assignment, not role alone.
+create or replace function app_private.has_org_role(p_organization_id uuid, p_roles text[])
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from organization_members m
+    join roles r on r.id = m.role_id
+    where m.organization_id = p_organization_id
+      and m.user_id = auth.uid()
+      and m.status = 'active'
+      and r.key = any(p_roles)
+  );
+$$;
+
+revoke all on function app_private.is_org_member(uuid) from public;
+revoke all on function app_private.has_org_role(uuid, text[]) from public;
+grant execute on function app_private.is_org_member(uuid) to authenticated;
+grant execute on function app_private.has_org_role(uuid, text[]) to authenticated;
+
 create table organization_settings (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null unique references organizations(id) on delete cascade,

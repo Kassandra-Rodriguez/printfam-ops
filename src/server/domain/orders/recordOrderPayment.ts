@@ -31,7 +31,8 @@ export async function recordOrderPayment(
     });
     await recomputeOrderBalance(supabase, parsed.data.orderId);
     return { ok: true };
-  } catch {
+  } catch (err) {
+    console.error("recordOrderPayment failed:", err);
     return { ok: false, error: "Could not record the payment. Try again." };
   }
 }

@@ -9,11 +9,12 @@ export type TaskRow = {
   priority: string;
   order_id: string | null;
   customer_id: string | null;
+  request_id: string | null;
   order?: { id: string; order_number: string; title: string | null } | null;
 };
 
 const TASK_SELECT =
-  "id, title, status, due_date, priority, order_id, customer_id, order:orders(id, order_number, title)";
+  "id, title, status, due_date, priority, order_id, customer_id, request_id, order:orders(id, order_number, title)";
 
 export async function listOpenTasks(
   supabase: SupabaseClient,
@@ -56,6 +57,7 @@ export async function insertTask(
     priority: string;
     orderId?: string;
     customerId?: string;
+    requestId?: string;
   },
 ) {
   const { error } = await supabase.from("tasks").insert({
@@ -65,6 +67,7 @@ export async function insertTask(
     priority: input.priority,
     order_id: input.orderId ?? null,
     customer_id: input.customerId ?? null,
+    request_id: input.requestId ?? null,
     created_by: userId,
   });
   if (error) throw error;

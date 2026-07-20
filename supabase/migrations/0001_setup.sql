@@ -18,53 +18,13 @@ begin
 end;
 $$;
 
--- Tenant isolation is membership-based, not "active org in JWT": a user may belong to
--- several organizations (docs/user_roles.md #4), and RLS should allow access to every
--- organization they're a member of. The *active* organization for a given UI session is
--- an application-layer concern (docs/architecture.md #3), enforced in addition to this,
--- not instead of it.
-create or replace function app_private.is_org_member(p_organization_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from organization_members m
-    where m.organization_id = p_organization_id
-      and m.user_id = auth.uid()
-      and m.status = 'active'
-  );
-$$;
-
--- Role check used by RLS policies that need Owner/Manager-only write access
--- (e.g. organization_settings, workflow_statuses). Team Member's narrower
--- "assigned records only" scope is enforced at the application layer
--- (docs/security.md #2) since it depends on per-entity assignment, not role alone.
-create or replace function app_private.has_org_role(p_organization_id uuid, p_roles text[])
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from organization_members m
-    join roles r on r.id = m.role_id
-    where m.organization_id = p_organization_id
-      and m.user_id = auth.uid()
-      and m.status = 'active'
-      and r.key = any(p_roles)
-  );
-$$;
-
-revoke all on function app_private.is_org_member(uuid) from public;
-revoke all on function app_private.has_org_role(uuid, text[]) from public;
-grant execute on function app_private.is_org_member(uuid) to authenticated;
-grant execute on function app_private.has_org_role(uuid, text[]) to authenticated;
+-- app_private.is_org_member() and app_private.has_org_role() are defined in
+-- 0002_tenancy.sql, not here: both are `language sql` functions, and unlike
+-- `plpgsql`, Postgres validates a SQL-language function's body against the
+-- catalog at CREATE FUNCTION time — they can't forward-reference
+-- `organization_members`/`roles` before those tables exist. (Found the hard
+-- way against a real hosted project; see git history for the original,
+-- broken placement if the reasoning here ever needs double-checking.)
 
 -- Backs org-scoped sequential numbers (orders.order_number, repair_tickets.ticket_number)
 -- without a race condition under concurrent inserts. Not in the original data_model.md
@@ -76,7 +36,15 @@ create table app_private.org_sequence_counters (
   primary key (organization_id, sequence_key)
 );
 
-create or replace function app_private.next_sequence_value(p_organization_id uuid, p_sequence_key text)
+-- Unlike is_org_member()/has_org_role() (app_private — only ever called from inside
+-- RLS policy SQL, never by application code), this one IS called directly via
+-- supabase.rpc() from server/data/orders.ts. PostgREST only routes RPC calls to
+-- functions in an *exposed* schema (public, by default) — putting this in
+-- app_private would silently make it unreachable from the client SDK. (Found the
+-- hard way: order creation failed with a generic "could not create the order"
+-- because this lived in app_private originally. See migration 0019 for the
+-- already-deployed fix.)
+create or replace function next_sequence_value(p_organization_id uuid, p_sequence_key text)
 returns bigint
 language plpgsql
 security definer
@@ -94,5 +62,5 @@ begin
 end;
 $$;
 
-revoke all on function app_private.next_sequence_value(uuid, text) from public;
-grant execute on function app_private.next_sequence_value(uuid, text) to authenticated;
+revoke all on function next_sequence_value(uuid, text) from public;
+grant execute on function next_sequence_value(uuid, text) to authenticated;

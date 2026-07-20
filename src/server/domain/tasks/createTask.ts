@@ -17,7 +17,8 @@ export async function createTask(
   try {
     await insertTask(supabase, organizationId, userId, parsed.data);
     return { ok: true };
-  } catch {
+  } catch (err) {
+    console.error("createTask failed:", err);
     return { ok: false, error: "Could not create the task. Try again." };
   }
 }

@@ -11,6 +11,7 @@ export async function createTaskAction(input: CreateTaskInput) {
   const result = await createTask(ctx.supabase, ctx.activeMembership.organization_id, ctx.userId, input);
   revalidatePath("/tasks");
   if (input.orderId) revalidatePath(`/orders/${input.orderId}`);
+  if (input.requestId) revalidatePath(`/requests/${input.requestId}`);
   revalidatePath("/dashboard");
   return result;
 }

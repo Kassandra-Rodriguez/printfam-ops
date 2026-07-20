@@ -51,6 +51,8 @@ export const createOrderSchema = z.object({
   statusId: z.string().uuid("Select a status"),
   /** Defaults to now in the domain layer when omitted — see createOrder.ts. */
   currentStatusReachedAt: z.string().optional(),
+  /** Set when this order originates from "Convert to Order" on a request (Flow C). */
+  convertedFromRequestId: z.string().uuid().optional(),
   totalAmount: z.coerce.number().min(0).optional(),
   items: z.array(orderLineItemSchema).optional(),
   promisedDate: z.string().optional(),

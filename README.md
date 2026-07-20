@@ -83,29 +83,35 @@ organization's Owner and seeds the default status workflows from
 `docs/product_requirements.md` §9 — there is no separate "seed my data" step needed to
 start using the shell.
 
-## What's built vs. not yet (Phases 2–3 of `docs/build_phases.md`)
+## What's built vs. not yet (Phases 2–4 of `docs/build_phases.md`)
 
 Live: auth, organization creation, the full database schema with RLS on every tenant
-table, the responsive app shell — plus, from Phase 3, the workflow this whole build
-sequence was aimed at: customer creation (with duplicate-detection warnings), manual
-order creation in both Quick Entry and Detailed Entry (including the "backfill history"
-flow for entering an order that's already mid-production, with backdated statuses and
-payments), the orders list and order detail page (status changes, payment recording,
-file uploads, linked tasks), a standalone Tasks view, and a dashboard attention list
-driven by real order/task data (overdue orders, due-soon orders, unpaid balances,
-overdue/today's tasks).
+table, the responsive app shell — plus customer creation (with duplicate-detection
+warnings), manual order creation in both Quick Entry and Detailed Entry (including the
+"backfill history" flow for entering an order that's already mid-production, with
+backdated statuses and payments), the orders list and order detail page (status changes,
+payment recording, file uploads, linked tasks), a standalone Tasks view, a dashboard
+attention list driven by real order/task data, requests (create, status, detail),
+convert-to-order (re-points attachments/conversations/tasks onto the new order without
+copying or losing them), and a communications inbox (log a message from any channel,
+optional follow-up task, "create request from this message").
 
-Not yet: Requests, Repairs, Quotes, Inbox, Inventory, and Reports are each a real route
-with an honest "ships in Phase N" state rather than a fake/dead control — per the coding
-standard against placeholder actions that do nothing.
+Not yet: Repairs, Quotes, Inventory, and Reports are each a real route with an honest
+"ships in Phase N" state rather than a fake/dead control — per the coding standard
+against placeholder actions that do nothing. Also not yet built: editing an order after
+creation (status changes and payments work; line items/pricing/dates are currently
+set-once) — a known gap, not scheduled yet.
 
-**Not yet runtime-verified.** This was built and scaffolded in an environment without
-Docker, so — same caveat as the schema itself — everything above passes `npx tsc --noEmit`,
-`npm run lint`, and a full `next build`, but has not been exercised against a live
-Supabase instance or a real browser. Before trusting it: `npx supabase start`, `npm run
-dev`, and walk through sign up → create org → create a customer → create an order (try
-both Quick Entry and a backdated Detailed Entry order) → record a payment → add a task →
-confirm it all shows up correctly on `/dashboard`.
+**Runtime-verified against a real hosted Supabase project**, not just type-checked:
+sign-up → org creation → customer → order (Quick and backdated Detailed Entry) →
+payment → task → dashboard all confirmed working end-to-end in a browser. The
+request → communication → task → convert-to-order flow, including the re-pointing
+logic, was verified with a scripted test against the live database (create everything,
+convert, assert every link survived, clean up). One real bug was found and fixed this
+way that static checks couldn't catch: `next_sequence_value()` lived in a
+Postgres schema hidden from Supabase's REST API, so order-number generation silently
+failed — see `supabase/migrations/0001_setup.sql` and `0019_fix_next_sequence_value_schema.sql`
+for the fix and the reasoning.
 
 ## Testing
 

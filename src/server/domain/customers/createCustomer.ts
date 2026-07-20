@@ -45,7 +45,8 @@ export async function createCustomer(
   try {
     const customer = await insertCustomer(supabase, organizationId, parsed.data);
     return { status: "created", customer };
-  } catch {
+  } catch (err) {
+    console.error("createCustomer failed:", err);
     return { status: "error", error: "Could not create the customer. Try again." };
   }
 }

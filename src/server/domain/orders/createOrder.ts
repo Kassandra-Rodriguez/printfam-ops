@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createOrderSchema, type CreateOrderInput } from "@/lib/validation/orders";
 import { nextOrderNumber } from "@/server/data/orders";
 import { insertPayment, recomputeOrderBalance } from "@/server/data/payments";
+import { finalizeRequestConversion } from "@/server/domain/requests/convertRequestToOrder";
 
 export type CreateOrderResult =
   | { status: "created"; orderId: string; orderNumber: string }
@@ -87,12 +88,14 @@ export async function createOrder(
         promised_date: data.promisedDate || null,
         internal_deadline: data.internalDeadline || null,
         notes: data.notes || null,
+        converted_from_request_id: data.convertedFromRequestId ?? null,
         created_by: userId,
       })
       .select("id, order_number")
       .single();
 
     if (orderError || !order) {
+      console.error("createOrder: order insert failed:", orderError);
       return { status: "error", error: "Could not create the order. Try again." };
     }
 
@@ -107,6 +110,7 @@ export async function createOrder(
       })),
     );
     if (itemsError) {
+      console.error("createOrder: items insert failed:", itemsError);
       return { status: "error", error: "Order was created, but its items failed to save." };
     }
 
@@ -122,6 +126,7 @@ export async function createOrder(
       })),
     );
     if (historyError) {
+      console.error("createOrder: status history insert failed:", historyError);
       return { status: "error", error: "Order was created, but its status history failed to save." };
     }
 
@@ -142,8 +147,13 @@ export async function createOrder(
       await recomputeOrderBalance(supabase, order.id);
     }
 
+    if (data.convertedFromRequestId) {
+      await finalizeRequestConversion(supabase, organizationId, data.convertedFromRequestId, order.id);
+    }
+
     return { status: "created", orderId: order.id, orderNumber: order.order_number };
-  } catch {
+  } catch (err) {
+    console.error("createOrder failed:", err);
     return { status: "error", error: "Could not create the order. Try again." };
   }
 }

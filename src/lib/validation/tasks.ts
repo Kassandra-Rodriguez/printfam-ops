@@ -6,6 +6,7 @@ export const createTaskSchema = z.object({
   priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
   orderId: z.string().uuid().optional(),
   customerId: z.string().uuid().optional(),
+  requestId: z.string().uuid().optional(),
 });
 
 export type CreateTaskInput = z.input<typeof createTaskSchema>;

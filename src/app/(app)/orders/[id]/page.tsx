@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { AddTaskForm } from "@/components/tasks/add-task-form";
 import { TaskRow } from "@/components/tasks/task-row";
+import { LogCommunicationDialog } from "@/components/communications/log-communication-dialog";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { requireOrgContext } from "@/server/authz/session";
 import { getOrder } from "@/server/data/orders";
@@ -82,6 +83,14 @@ export default async function OrderDetailPage({
   const tasks = ((order.tasks ?? []) as { id: string; status: string }[])
     .filter((t) => t.status === "open")
     .map((t) => t as unknown as Parameters<typeof TaskRow>[0]["task"]);
+  const conversations = (order.conversations ?? []) as {
+    id: string;
+    channel: string;
+    messages: { id: string; body: string; direction: string; occurred_at: string }[];
+  }[];
+  const messages = conversations
+    .flatMap((c) => c.messages.map((m) => ({ ...m, channel: c.channel })))
+    .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
 
   return (
     <div className="mx-auto max-w-4xl p-6">
@@ -169,6 +178,31 @@ export default async function OrderDetailPage({
                     ) : null}
                   </div>
                 ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-medium">Communications</CardTitle>
+              <LogCommunicationDialog customerId={order.customer_id} orderId={order.id} />
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {messages.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nothing logged yet.</p>
+              ) : (
+                messages.map((m) => (
+                  <div key={m.id} className="text-sm">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="capitalize">{m.channel.replace("_", " ")}</span>
+                      <span>·</span>
+                      <span>{m.direction === "incoming" ? "From customer" : "To customer"}</span>
+                      <span>·</span>
+                      <span>{formatDateTime(m.occurred_at)}</span>
+                    </div>
+                    <p className="mt-0.5 whitespace-pre-wrap">{m.body}</p>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>

@@ -22,7 +22,8 @@ export async function changeOrderStatus(
     });
     if (error) throw error;
     return { ok: true };
-  } catch {
+  } catch (err) {
+    console.error("changeOrderStatus failed:", err);
     return { ok: false, error: "Could not update the status. Try again." };
   }
 }

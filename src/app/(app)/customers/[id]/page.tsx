@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LogCommunicationDialog } from "@/components/communications/log-communication-dialog";
 import { requireOrgContext } from "@/server/authz/session";
 import { getCustomer } from "@/server/data/customers";
 import { listOrdersForCustomer } from "@/server/data/orders";
@@ -31,14 +34,20 @@ export default async function CustomerDetailPage({
             Customer since {new Date(customer.created_at as string).toLocaleDateString()}
           </p>
         </div>
-        {customer.outstanding_balance > 0 ? (
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Outstanding balance</p>
-            <p className="text-base font-semibold text-amber-700 dark:text-amber-400">
-              {formatCurrency(customer.outstanding_balance)}
-            </p>
-          </div>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {customer.outstanding_balance > 0 ? (
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Outstanding balance</p>
+              <p className="text-base font-semibold text-amber-700 dark:text-amber-400">
+                {formatCurrency(customer.outstanding_balance)}
+              </p>
+            </div>
+          ) : null}
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/requests/new?customerId=${customer.id}`}>New request</Link>
+          </Button>
+          <LogCommunicationDialog customerId={customer.id} />
+        </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">

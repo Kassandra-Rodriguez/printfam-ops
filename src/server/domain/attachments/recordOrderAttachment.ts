@@ -17,7 +17,8 @@ export async function recordOrderAttachment(
   try {
     await insertAttachment(supabase, organizationId, userId, parsed.data);
     return { ok: true };
-  } catch {
+  } catch (err) {
+    console.error("recordOrderAttachment failed:", err);
     return { ok: false, error: "Could not save the file. Try again." };
   }
 }

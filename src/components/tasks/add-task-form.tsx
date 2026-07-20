@@ -7,7 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createTaskAction } from "@/app/(app)/tasks/actions";
 
-export function AddTaskForm({ orderId, customerId }: { orderId?: string; customerId?: string }) {
+export function AddTaskForm({
+  orderId,
+  customerId,
+  requestId,
+}: {
+  orderId?: string;
+  customerId?: string;
+  requestId?: string;
+}) {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -18,7 +26,14 @@ export function AddTaskForm({ orderId, customerId }: { orderId?: string; custome
     e.preventDefault();
     if (!title.trim()) return;
     setSubmitting(true);
-    await createTaskAction({ title, dueDate: dueDate || undefined, priority: "normal", orderId, customerId });
+    await createTaskAction({
+      title,
+      dueDate: dueDate || undefined,
+      priority: "normal",
+      orderId,
+      customerId,
+      requestId,
+    });
     setTitle("");
     setDueDate("");
     setSubmitting(false);
