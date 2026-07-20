@@ -39,11 +39,13 @@ export function LogCommunicationDialog({
   customerId,
   requestId,
   orderId,
+  repairTicketId,
   customers,
 }: {
   customerId?: string;
   requestId?: string;
   orderId?: string;
+  repairTicketId?: string;
   customers?: { id: string; name: string }[];
 }) {
   const [open, setOpen] = useState(false);
@@ -66,6 +68,7 @@ export function LogCommunicationDialog({
       body: formData.get("body") as string,
       relatedRequestId: requestId,
       relatedOrderId: orderId,
+      relatedRepairTicketId: repairTicketId,
       followUpRequired,
       followUpDate: (formData.get("followUpDate") as string) || undefined,
     });

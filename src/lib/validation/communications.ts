@@ -19,6 +19,7 @@ export const logCommunicationSchema = z.object({
   occurredAt: z.string().optional(),
   relatedRequestId: z.string().uuid().optional(),
   relatedOrderId: z.string().uuid().optional(),
+  relatedRepairTicketId: z.string().uuid().optional(),
   followUpRequired: z.boolean().default(false),
   followUpDate: z.string().optional(),
 });

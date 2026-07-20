@@ -7,8 +7,10 @@ import { LogCommunicationDialog } from "@/components/communications/log-communic
 import { requireOrgContext } from "@/server/authz/session";
 import { getCustomer } from "@/server/data/customers";
 import { listOrdersForCustomer } from "@/server/data/orders";
+import { listRepairTicketsForCustomer } from "@/server/data/repairs";
 import { formatCurrency } from "@/lib/format";
 import { OrdersTable } from "../../orders/orders-table";
+import { RepairsTable } from "../../repairs/repairs-table";
 
 export default async function CustomerDetailPage({
   params,
@@ -21,7 +23,10 @@ export default async function CustomerDetailPage({
 
   if (!customer) notFound();
 
-  const orders = await listOrdersForCustomer(ctx.supabase, ctx.activeMembership.organization_id, id);
+  const [orders, repairs] = await Promise.all([
+    listOrdersForCustomer(ctx.supabase, ctx.activeMembership.organization_id, id),
+    listRepairTicketsForCustomer(ctx.supabase, ctx.activeMembership.organization_id, id),
+  ]);
   const identifiers = (customer.customer_identifiers ?? []) as { kind: string; value: string }[];
   const tags = (customer.customer_tags ?? []) as { tag: string }[];
 
@@ -45,6 +50,9 @@ export default async function CustomerDetailPage({
           ) : null}
           <Button asChild size="sm" variant="outline">
             <Link href={`/requests/new?customerId=${customer.id}`}>New request</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/repairs/new?customerId=${customer.id}`}>New repair</Link>
           </Button>
           <LogCommunicationDialog customerId={customer.id} />
         </div>
@@ -111,6 +119,13 @@ export default async function CustomerDetailPage({
         <h2 className="mb-2 text-sm font-medium">Orders</h2>
         <OrdersTable orders={orders} />
       </div>
+
+      {repairs.length > 0 ? (
+        <div className="mt-6">
+          <h2 className="mb-2 text-sm font-medium">Repairs</h2>
+          <RepairsTable repairs={repairs} />
+        </div>
+      ) : null}
     </div>
   );
 }

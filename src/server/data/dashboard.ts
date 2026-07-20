@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OrderListRow } from "./orders";
+import type { RepairListRow } from "./repairs";
 import type { TaskRow } from "./tasks";
 
 export type DashboardData = {
@@ -9,10 +10,17 @@ export type DashboardData = {
   waitingForPaymentOrders: OrderListRow[];
   overdueTasks: TaskRow[];
   todayTasks: TaskRow[];
+  repairsAwaitingDiagnostics: RepairListRow[];
+  repairsAwaitingApproval: RepairListRow[];
+  repairsWaitingForParts: RepairListRow[];
 };
 
 const ORDER_SELECT =
   "id, order_number, title, order_type, promised_date, total, balance_remaining, created_at, " +
+  "customer:customers(id, display_name), status:workflow_statuses(id, key, label, category)";
+
+const REPAIR_SELECT =
+  "id, ticket_number, device_model, reported_issue, diagnostic_fee, final_balance, created_at, " +
   "customer:customers(id, display_name), status:workflow_statuses(id, key, label, category)";
 
 const TASK_SELECT =
@@ -82,5 +90,28 @@ export async function getDashboardData(
   const overdueTasks = allDueTasks.filter((t) => t.due_date && t.due_date < today);
   const todayTasks = allDueTasks.filter((t) => t.due_date === today);
 
-  return { overdueOrders, dueSoonOrders, waitingForPaymentOrders, overdueTasks, todayTasks };
+  const { data: repairsData, error: repairsError } = await supabase
+    .from("repair_tickets")
+    .select(REPAIR_SELECT)
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null);
+  if (repairsError) throw repairsError;
+
+  const allRepairs = (repairsData ?? []) as unknown as RepairListRow[];
+  const repairsAwaitingDiagnostics = allRepairs.filter((r) => r.status?.key === "device_received");
+  const repairsAwaitingApproval = allRepairs.filter(
+    (r) => r.status?.key === "waiting_for_customer_approval",
+  );
+  const repairsWaitingForParts = allRepairs.filter((r) => r.status?.key === "waiting_for_parts");
+
+  return {
+    overdueOrders,
+    dueSoonOrders,
+    waitingForPaymentOrders,
+    overdueTasks,
+    todayTasks,
+    repairsAwaitingDiagnostics,
+    repairsAwaitingApproval,
+    repairsWaitingForParts,
+  };
 }

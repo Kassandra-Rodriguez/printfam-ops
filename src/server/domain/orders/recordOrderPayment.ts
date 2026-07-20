@@ -16,6 +16,9 @@ export async function recordOrderPayment(
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
+  if (!parsed.data.orderId) {
+    return { ok: false, error: "Missing order" };
+  }
 
   try {
     await insertPayment(supabase, {

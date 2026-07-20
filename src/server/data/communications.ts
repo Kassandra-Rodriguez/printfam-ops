@@ -13,6 +13,7 @@ export type CommunicationListRow = {
     channel: string;
     related_request_id: string | null;
     related_order_id: string | null;
+    related_repair_ticket_id: string | null;
     customer: { id: string; display_name: string } | null;
   } | null;
 };
@@ -26,7 +27,7 @@ export async function listRecentCommunications(
     .from("messages")
     .select(
       `id, body, direction, occurred_at, follow_up_required, follow_up_date,
-       conversation:conversations(id, channel, related_request_id, related_order_id, customer:customers(id, display_name))`,
+       conversation:conversations(id, channel, related_request_id, related_order_id, related_repair_ticket_id, customer:customers(id, display_name))`,
     )
     .eq("organization_id", organizationId)
     .order("occurred_at", { ascending: false })
@@ -54,6 +55,7 @@ export async function insertCommunication(
     occurredAt?: string;
     relatedRequestId?: string;
     relatedOrderId?: string;
+    relatedRepairTicketId?: string;
     followUpRequired: boolean;
     followUpDate?: string;
   },
@@ -66,6 +68,7 @@ export async function insertCommunication(
       channel: input.channel,
       related_request_id: input.relatedRequestId ?? null,
       related_order_id: input.relatedOrderId ?? null,
+      related_repair_ticket_id: input.relatedRepairTicketId ?? null,
     })
     .select("id")
     .single();

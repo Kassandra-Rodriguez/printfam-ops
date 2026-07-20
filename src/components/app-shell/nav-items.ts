@@ -25,7 +25,7 @@ export const navItems: NavItem[] = [
   { label: "Customers", href: "/customers", icon: Users, phase: 3 },
   { label: "Orders", href: "/orders", icon: ShoppingBag, phase: 3 },
   { label: "Requests", href: "/requests", icon: FileText, phase: 4 },
-  { label: "Repairs", href: "/repairs", icon: Wrench, phase: 5 },
+  { label: "Repairs", href: "/repairs", icon: Wrench, phase: null },
   { label: "Quotes", href: "/quotes", icon: FileText, phase: 6 },
   { label: "Inbox", href: "/inbox", icon: Inbox, phase: 4 },
   { label: "Tasks", href: "/tasks", icon: CheckSquare, phase: 3 },

@@ -36,6 +36,7 @@ export async function logCommunication(
         customerId: parsed.data.customerId,
         orderId: parsed.data.relatedOrderId,
         requestId: parsed.data.relatedRequestId,
+        repairTicketId: parsed.data.relatedRepairTicketId,
       });
     }
 

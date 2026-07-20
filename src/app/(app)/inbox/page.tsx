@@ -78,6 +78,10 @@ export default async function InboxPage() {
                   <Link href={`/orders/${m.conversation.related_order_id}`} className="text-muted-foreground hover:underline">
                     View linked order
                   </Link>
+                ) : m.conversation?.related_repair_ticket_id ? (
+                  <Link href={`/repairs/${m.conversation.related_repair_ticket_id}`} className="text-muted-foreground hover:underline">
+                    View linked repair
+                  </Link>
                 ) : m.conversation?.customer ? (
                   <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs">
                     <Link href={`/requests/new?customerId=${m.conversation.customer.id}`}>

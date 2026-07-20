@@ -12,6 +12,7 @@ export async function createTaskAction(input: CreateTaskInput) {
   revalidatePath("/tasks");
   if (input.orderId) revalidatePath(`/orders/${input.orderId}`);
   if (input.requestId) revalidatePath(`/requests/${input.requestId}`);
+  if (input.repairTicketId) revalidatePath(`/repairs/${input.repairTicketId}`);
   revalidatePath("/dashboard");
   return result;
 }

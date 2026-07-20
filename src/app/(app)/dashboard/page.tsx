@@ -4,6 +4,7 @@ import { TaskRow } from "@/components/tasks/task-row";
 import { requireOrgContext } from "@/server/authz/session";
 import { getDashboardData } from "@/server/data/dashboard";
 import { DashboardOrderRow } from "./order-row";
+import { DashboardRepairRow } from "./repair-row";
 
 export default async function DashboardPage() {
   const ctx = await requireOrgContext();
@@ -14,7 +15,10 @@ export default async function DashboardPage() {
     data.dueSoonOrders.length === 0 &&
     data.waitingForPaymentOrders.length === 0 &&
     data.overdueTasks.length === 0 &&
-    data.todayTasks.length === 0;
+    data.todayTasks.length === 0 &&
+    data.repairsAwaitingDiagnostics.length === 0 &&
+    data.repairsAwaitingApproval.length === 0 &&
+    data.repairsWaitingForParts.length === 0;
 
   return (
     <div className="p-6">
@@ -51,6 +55,12 @@ export default async function DashboardPage() {
             ))}
           </Section>
 
+          <Section title="Repairs awaiting approval" count={data.repairsAwaitingApproval.length}>
+            {data.repairsAwaitingApproval.map((r) => (
+              <DashboardRepairRow key={r.id} repair={r} />
+            ))}
+          </Section>
+
           <Section title="Waiting for payment" count={data.waitingForPaymentOrders.length}>
             {data.waitingForPaymentOrders.map((o) => (
               <DashboardOrderRow key={o.id} order={o} emphasis="balance" />
@@ -60,6 +70,18 @@ export default async function DashboardPage() {
           <Section title="Due soon (next 7 days)" count={data.dueSoonOrders.length}>
             {data.dueSoonOrders.map((o) => (
               <DashboardOrderRow key={o.id} order={o} emphasis="date" />
+            ))}
+          </Section>
+
+          <Section title="Repairs awaiting diagnostics" count={data.repairsAwaitingDiagnostics.length}>
+            {data.repairsAwaitingDiagnostics.map((r) => (
+              <DashboardRepairRow key={r.id} repair={r} />
+            ))}
+          </Section>
+
+          <Section title="Repairs waiting for parts" count={data.repairsWaitingForParts.length}>
+            {data.repairsWaitingForParts.map((r) => (
+              <DashboardRepairRow key={r.id} repair={r} />
             ))}
           </Section>
         </div>

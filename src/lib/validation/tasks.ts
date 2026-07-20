@@ -7,6 +7,7 @@ export const createTaskSchema = z.object({
   orderId: z.string().uuid().optional(),
   customerId: z.string().uuid().optional(),
   requestId: z.string().uuid().optional(),
+  repairTicketId: z.string().uuid().optional(),
 });
 
 export type CreateTaskInput = z.input<typeof createTaskSchema>;

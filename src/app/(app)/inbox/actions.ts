@@ -20,5 +20,6 @@ export async function logCommunicationAction(
   revalidatePath("/dashboard");
   if (input.relatedRequestId) revalidatePath(`/requests/${input.relatedRequestId}`);
   if (input.relatedOrderId) revalidatePath(`/orders/${input.relatedOrderId}`);
+  if (input.relatedRepairTicketId) revalidatePath(`/repairs/${input.relatedRepairTicketId}`);
   return result;
 }
