@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { AddTaskForm } from "@/components/tasks/add-task-form";
@@ -106,7 +107,12 @@ export default async function OrderDetailPage({
           </Link>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <StatusControl orderId={order.id} currentStatusId={order.status_id} statuses={statuses} />
+          <div className="flex items-center gap-2">
+            <StatusControl orderId={order.id} currentStatusId={order.status_id} statuses={statuses} />
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/orders/${order.id}/edit`}>Edit</Link>
+            </Button>
+          </div>
           <Badge variant="secondary">{ORDER_TYPE_LABELS[order.order_type] ?? order.order_type}</Badge>
         </div>
       </div>

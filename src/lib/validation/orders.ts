@@ -2,6 +2,18 @@ import { z } from "zod";
 
 export const orderTypeSchema = z.enum(["custom", "existing_product", "bulk", "service"]);
 
+export const orderSourceSchema = z.enum([
+  "instagram",
+  "text",
+  "shopify",
+  "tiktok",
+  "email",
+  "phone",
+  "in_person",
+  "returning_customer",
+  "other",
+]);
+
 export const orderLineItemSchema = z.object({
   description: z.string().trim().min(1, "Item description is required"),
   quantity: z.coerce.number().positive("Quantity must be greater than 0"),
@@ -62,19 +74,7 @@ export const createOrderSchema = z.object({
   taxTotal: z.coerce.number().min(0).default(0),
   shippingCost: z.coerce.number().min(0).default(0),
   depositRequired: z.coerce.number().min(0).default(0),
-  source: z
-    .enum([
-      "instagram",
-      "text",
-      "shopify",
-      "tiktok",
-      "email",
-      "phone",
-      "in_person",
-      "returning_customer",
-      "other",
-    ])
-    .optional(),
+  source: orderSourceSchema.optional(),
   /**
    * Prior statuses only — never the current one. docs/user_flows.md Flow B:
    * "surfaces a Backfill history section" for statuses reached *before*
@@ -92,3 +92,29 @@ export const createOrderSchema = z.object({
  * works with the post-parse output type internally (see createOrder.ts).
  */
 export type CreateOrderInput = z.input<typeof createOrderSchema>;
+
+/**
+ * Editing an order deliberately excludes orderType/requiresProduction (would
+ * orphan its status history against a different workflow's status list) and
+ * statusId/backfill (status changes go through the dedicated status control
+ * on the order detail page, which also logs the transition to
+ * order_status_history — editing shouldn't have a second, untracked way to
+ * change status). Payments aren't here either — recordOrderPayment.ts is the
+ * only way money gets recorded, edit or not.
+ */
+export const updateOrderSchema = z.object({
+  orderId: z.string().uuid(),
+  customerId: z.string().uuid("Select a customer"),
+  title: z.string().trim().min(1, "Order title is required"),
+  items: z.array(orderLineItemSchema).min(1, "Add at least one item"),
+  promisedDate: z.string().optional(),
+  internalDeadline: z.string().optional(),
+  notes: z.string().trim().optional(),
+  discountTotal: z.coerce.number().min(0).default(0),
+  taxTotal: z.coerce.number().min(0).default(0),
+  shippingCost: z.coerce.number().min(0).default(0),
+  depositRequired: z.coerce.number().min(0).default(0),
+  source: orderSourceSchema.optional(),
+});
+
+export type UpdateOrderInput = z.input<typeof updateOrderSchema>;

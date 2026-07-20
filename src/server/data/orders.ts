@@ -91,3 +91,68 @@ export async function updateOrderStatus(
   const { error } = await supabase.from("orders").update({ status_id: statusId }).eq("id", orderId);
   if (error) throw error;
 }
+
+export async function updateOrderFields(
+  supabase: SupabaseClient,
+  orderId: string,
+  fields: {
+    customerId: string;
+    title: string;
+    subtotal: number;
+    total: number;
+    promisedDate?: string;
+    internalDeadline?: string;
+    notes?: string;
+    discountTotal: number;
+    taxTotal: number;
+    shippingCost: number;
+    depositRequired: number;
+    source?: string;
+  },
+) {
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      customer_id: fields.customerId,
+      title: fields.title,
+      subtotal: fields.subtotal,
+      total: fields.total,
+      promised_date: fields.promisedDate || null,
+      internal_deadline: fields.internalDeadline || null,
+      notes: fields.notes || null,
+      discount_total: fields.discountTotal,
+      tax_total: fields.taxTotal,
+      shipping_cost: fields.shippingCost,
+      deposit_required: fields.depositRequired,
+      source: fields.source ?? null,
+    })
+    .eq("id", orderId);
+  if (error) throw error;
+}
+
+/**
+ * Replaces every line item wholesale rather than diffing — an order rarely
+ * has more than a handful of items, and "delete all, insert the current set"
+ * is simpler and less error-prone than reconciling adds/edits/removes by id.
+ */
+export async function replaceOrderItems(
+  supabase: SupabaseClient,
+  organizationId: string,
+  orderId: string,
+  items: { description: string; quantity: number; unitPrice: number; itemType: string }[],
+) {
+  const { error: deleteError } = await supabase.from("order_items").delete().eq("order_id", orderId);
+  if (deleteError) throw deleteError;
+
+  const { error: insertError } = await supabase.from("order_items").insert(
+    items.map((item) => ({
+      order_id: orderId,
+      organization_id: organizationId,
+      item_type: item.itemType,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+    })),
+  );
+  if (insertError) throw insertError;
+}

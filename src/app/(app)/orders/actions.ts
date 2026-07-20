@@ -6,7 +6,8 @@ import { createOrder, type CreateOrderResult } from "@/server/domain/orders/crea
 import { changeOrderStatus } from "@/server/domain/orders/changeOrderStatus";
 import { recordOrderPayment } from "@/server/domain/orders/recordOrderPayment";
 import { recordOrderAttachment } from "@/server/domain/attachments/recordOrderAttachment";
-import type { CreateOrderInput } from "@/lib/validation/orders";
+import { updateOrder, type UpdateOrderResult } from "@/server/domain/orders/updateOrder";
+import type { CreateOrderInput, UpdateOrderInput } from "@/lib/validation/orders";
 import type { RecordPaymentInput } from "@/lib/validation/payments";
 import type { RecordAttachmentInput } from "@/lib/validation/attachments";
 
@@ -39,6 +40,15 @@ export async function recordPaymentAction(input: RecordPaymentInput, customerId:
     input,
   );
   revalidatePath(`/orders/${input.orderId}`);
+  revalidatePath("/dashboard");
+  return result;
+}
+
+export async function updateOrderAction(input: UpdateOrderInput): Promise<UpdateOrderResult> {
+  const ctx = await requireOrgContext();
+  const result = await updateOrder(ctx.supabase, ctx.activeMembership.organization_id, input);
+  revalidatePath(`/orders/${input.orderId}`);
+  revalidatePath("/orders");
   revalidatePath("/dashboard");
   return result;
 }
