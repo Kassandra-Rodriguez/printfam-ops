@@ -5,6 +5,7 @@ import { nextOrderNumber } from "@/server/data/orders";
 import { insertPayment, recomputeOrderBalance } from "@/server/data/payments";
 import { finalizeRequestConversion } from "@/server/domain/requests/convertRequestToOrder";
 import { finalizeQuoteConversion } from "@/server/domain/quotes/finalizeQuoteConversion";
+import { applyInventoryTrigger } from "./applyInventoryTrigger";
 
 export type CreateOrderResult =
   | { status: "created"; orderId: string; orderNumber: string }
@@ -108,6 +109,7 @@ export async function createOrder(
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unitPrice,
+        product_id: item.productId ?? null,
       })),
     );
     if (itemsError) {
@@ -130,6 +132,11 @@ export async function createOrder(
       console.error("createOrder: status history insert failed:", historyError);
       return { status: "error", error: "Order was created, but its status history failed to save." };
     }
+
+    // Mid-workflow entry (Flow B) can create an order already sitting at a
+    // trigger status (e.g. "In Production") — the stock effect should apply
+    // immediately, same as if the order had just transitioned there live.
+    await applyInventoryTrigger(supabase, organizationId, order.id, currentStatusId);
 
     if (data.backfillPayments && data.backfillPayments.length > 0) {
       for (const payment of data.backfillPayments) {

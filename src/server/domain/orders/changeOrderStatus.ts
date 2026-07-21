@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { updateOrderStatus } from "@/server/data/orders";
 import { isProductionStageStatus } from "@/server/data/workflow";
 import { hasUnresolvedApprovalGate } from "@/server/data/proofs";
+import { applyInventoryTrigger } from "./applyInventoryTrigger";
 
 export async function changeOrderStatus(
   supabase: SupabaseClient,
@@ -35,6 +36,9 @@ export async function changeOrderStatus(
       note: note || null,
     });
     if (error) throw error;
+
+    await applyInventoryTrigger(supabase, organizationId, orderId, statusId);
+
     return { ok: true };
   } catch (err) {
     console.error("changeOrderStatus failed:", err);

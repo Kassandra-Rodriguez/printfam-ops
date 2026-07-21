@@ -88,6 +88,7 @@ export function CreateOrderForm({
   initialTitle,
   initialItems,
   initialPricing,
+  products = [],
 }: {
   customers: { id: string; name: string }[];
   statusesByEntityType: Record<EntityType, WorkflowStatus[]>;
@@ -102,6 +103,7 @@ export function CreateOrderForm({
     shippingCost: number;
     depositRequired: number;
   };
+  products?: { id: string; name: string; sellingPrice: number; availableQuantity: number }[];
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"quick" | "detailed">(initialItems && initialItems.length > 0 ? "detailed" : "quick");
@@ -363,37 +365,75 @@ export function CreateOrderForm({
                   </p>
                 ) : null}
                 {itemsArray.fields.map((field, index) => (
-                  <div key={field.id} className="grid grid-cols-[1fr_5rem_6rem_auto] items-end gap-2">
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Description</Label>
-                      <Input {...form.register(`items.${index}.description` as const)} />
+                  <div key={field.id} className="flex flex-col gap-2 rounded-md border p-2">
+                    <div className="grid grid-cols-[1fr_5rem_6rem_auto] items-end gap-2">
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Description</Label>
+                        <Input {...form.register(`items.${index}.description` as const)} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Qty</Label>
+                        <Input
+                          type="number"
+                          step="1"
+                          min="1"
+                          {...form.register(`items.${index}.quantity` as const)}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Unit price</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...form.register(`items.${index}.unitPrice` as const)}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => itemsArray.remove(index)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Qty</Label>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="1"
-                        {...form.register(`items.${index}.quantity` as const)}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Unit price</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        {...form.register(`items.${index}.unitPrice` as const)}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => itemsArray.remove(index)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    {products.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Link to product (optional — enables inventory tracking)</Label>
+                        <Select
+                          value={form.watch(`items.${index}.productId`) ?? "none"}
+                          onValueChange={(v: string) => {
+                            if (v === "none") {
+                              form.setValue(`items.${index}.productId`, undefined);
+                              form.setValue(`items.${index}.itemType`, "custom_line_item");
+                              return;
+                            }
+                            const product = products.find((p) => p.id === v);
+                            form.setValue(`items.${index}.productId`, v);
+                            form.setValue(`items.${index}.itemType`, "catalog_product");
+                            if (product) {
+                              form.setValue(`items.${index}.unitPrice`, product.sellingPrice);
+                              if (!form.getValues(`items.${index}.description`)) {
+                                form.setValue(`items.${index}.description`, product.name);
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Not linked" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Not linked</SelectItem>
+                            {products.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name} ({p.availableQuantity} available)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
 

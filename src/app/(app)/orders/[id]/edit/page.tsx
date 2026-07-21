@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireOrgContext } from "@/server/authz/session";
 import { getOrder } from "@/server/data/orders";
 import { listCustomers } from "@/server/data/customers";
+import { listProducts } from "@/server/data/products";
 import { EditOrderForm } from "./edit-order-form";
 
 export default async function EditOrderPage({
@@ -13,9 +14,10 @@ export default async function EditOrderPage({
   const ctx = await requireOrgContext();
   const organizationId = ctx.activeMembership.organization_id;
 
-  const [order, customers] = await Promise.all([
+  const [order, customers, products] = await Promise.all([
     getOrder(ctx.supabase, id),
     listCustomers(ctx.supabase, organizationId),
+    listProducts(ctx.supabase, organizationId, false),
   ]);
   if (!order || order.organization_id !== organizationId) notFound();
 
@@ -25,6 +27,7 @@ export default async function EditOrderPage({
     quantity: number;
     unit_price: number;
     item_type: string;
+    product_id: string | null;
   }[];
 
   return (
@@ -37,6 +40,9 @@ export default async function EditOrderPage({
         <EditOrderForm
           orderId={order.id}
           customers={customers.map((c) => ({ id: c.id, name: c.display_name }))}
+          products={products
+            .filter((p) => p.is_active)
+            .map((p) => ({ id: p.id, name: p.name, availableQuantity: p.available_quantity }))}
           defaultValues={{
             customerId: order.customer_id,
             title: order.title ?? "",
@@ -45,6 +51,7 @@ export default async function EditOrderPage({
               quantity: i.quantity,
               unitPrice: i.unit_price,
               itemType: i.item_type as "catalog_product" | "custom_line_item" | "service" | "repair_charge",
+              productId: i.product_id ?? undefined,
             })),
             promisedDate: order.promised_date ?? "",
             internalDeadline: order.internal_deadline ?? "",

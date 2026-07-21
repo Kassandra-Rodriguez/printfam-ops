@@ -2,6 +2,7 @@ import { requireOrgContext } from "@/server/authz/session";
 import { listCustomers } from "@/server/data/customers";
 import { getWorkflowStatuses } from "@/server/data/workflow";
 import { getQuote } from "@/server/data/quotes";
+import { listProducts } from "@/server/data/products";
 import { CreateOrderForm } from "./create-order-form";
 
 /** Flow E step 5: quote_items' item_type vocabulary doesn't match orders' — map to the closest order line-item type rather than adding a fifth type just for carried-over quotes. */
@@ -21,12 +22,13 @@ export default async function NewOrderPage({
   const ctx = await requireOrgContext();
   const orgId = ctx.activeMembership.organization_id;
 
-  const [customers, customStatuses, existingProductStatuses, serviceStatuses, quote] = await Promise.all([
+  const [customers, customStatuses, existingProductStatuses, serviceStatuses, quote, products] = await Promise.all([
     listCustomers(ctx.supabase, orgId),
     getWorkflowStatuses(ctx.supabase, orgId, "order_custom"),
     getWorkflowStatuses(ctx.supabase, orgId, "order_existing_product"),
     getWorkflowStatuses(ctx.supabase, orgId, "order_service"),
     fromQuoteId ? getQuote(ctx.supabase, fromQuoteId) : Promise.resolve(null),
+    listProducts(ctx.supabase, orgId, false),
   ]);
 
   const quoteItems = (quote?.quote_items ?? []) as {
@@ -54,6 +56,9 @@ export default async function NewOrderPage({
           }}
           convertedFromRequestId={fromRequestId}
           convertedFromQuoteId={fromQuoteId}
+          products={products
+            .filter((p) => p.is_active)
+            .map((p) => ({ id: p.id, name: p.name, sellingPrice: p.selling_price, availableQuantity: p.available_quantity }))}
           initialCustomerId={customerId}
           initialTitle={title}
           initialItems={

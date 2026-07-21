@@ -21,6 +21,8 @@ export const orderLineItemSchema = z.object({
   itemType: z
     .enum(["catalog_product", "custom_line_item", "service", "repair_charge"])
     .default("custom_line_item"),
+  /** Set when itemType is catalog_product — the link an order-status inventory trigger (Phase 8) actually moves stock for. */
+  productId: z.string().uuid().optional(),
 });
 
 export const backfillStatusEntrySchema = z.object({

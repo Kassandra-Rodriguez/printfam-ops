@@ -139,7 +139,7 @@ export async function replaceOrderItems(
   supabase: SupabaseClient,
   organizationId: string,
   orderId: string,
-  items: { description: string; quantity: number; unitPrice: number; itemType: string }[],
+  items: { description: string; quantity: number; unitPrice: number; itemType: string; productId?: string }[],
 ) {
   const { error: deleteError } = await supabase.from("order_items").delete().eq("order_id", orderId);
   if (deleteError) throw deleteError;
@@ -152,7 +152,25 @@ export async function replaceOrderItems(
       description: item.description,
       quantity: item.quantity,
       unit_price: item.unitPrice,
+      product_id: item.productId ?? null,
     })),
   );
   if (insertError) throw insertError;
+}
+
+/** Catalog-linked line items only — the ones an inventory-status trigger actually moves stock for (server/domain/orders/applyInventoryTrigger.ts). */
+export async function getCatalogProductOrderItems(
+  supabase: SupabaseClient,
+  organizationId: string,
+  orderId: string,
+): Promise<{ productId: string; quantity: number }[]> {
+  const { data, error } = await supabase
+    .from("order_items")
+    .select("product_id, quantity")
+    .eq("organization_id", organizationId)
+    .eq("order_id", orderId)
+    .eq("item_type", "catalog_product")
+    .not("product_id", "is", null);
+  if (error) throw error;
+  return (data ?? []).map((row) => ({ productId: row.product_id as string, quantity: Number(row.quantity) }));
 }
