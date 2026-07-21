@@ -65,6 +65,8 @@ export const createOrderSchema = z.object({
   currentStatusReachedAt: z.string().optional(),
   /** Set when this order originates from "Convert to Order" on a request (Flow C). */
   convertedFromRequestId: z.string().uuid().optional(),
+  /** Set when this order originates from "Convert to Order" on a quote (Flow E step 5). */
+  convertedFromQuoteId: z.string().uuid().optional(),
   totalAmount: z.coerce.number().min(0).optional(),
   items: z.array(orderLineItemSchema).optional(),
   promisedDate: z.string().optional(),

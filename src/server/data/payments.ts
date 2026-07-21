@@ -6,6 +6,7 @@ export type PaymentInsert = {
   customerId: string;
   orderId?: string;
   repairTicketId?: string;
+  quoteId?: string;
   amount: number;
   method: string;
   kind: "deposit" | "final" | "full" | "refund";
@@ -20,6 +21,7 @@ export async function insertPayment(supabase: SupabaseClient, payment: PaymentIn
     customer_id: payment.customerId,
     order_id: payment.orderId ?? null,
     repair_ticket_id: payment.repairTicketId ?? null,
+    quote_id: payment.quoteId ?? null,
     amount: payment.amount,
     method: payment.method,
     kind: payment.kind,

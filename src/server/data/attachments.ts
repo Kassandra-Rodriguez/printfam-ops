@@ -42,6 +42,22 @@ export async function listAttachmentsForRepairTicket(
   return data ?? [];
 }
 
+export async function listAttachmentsForQuote(
+  supabase: SupabaseClient,
+  organizationId: string,
+  quoteId: string,
+): Promise<AttachmentRow[]> {
+  const { data, error } = await supabase
+    .from("attachments")
+    .select("id, file_name, file_type, storage_path, visibility, created_at")
+    .eq("organization_id", organizationId)
+    .eq("quote_id", quoteId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** Bucket is private (supabase/migrations/0018_storage.sql) — every view goes through a short-lived signed URL, never a public path. */
 export async function getAttachmentSignedUrl(
   supabase: SupabaseClient,
@@ -61,6 +77,7 @@ export async function insertAttachment(
   input: {
     orderId?: string;
     repairTicketId?: string;
+    quoteId?: string;
     fileName: string;
     fileType: string;
     storagePath: string;
@@ -71,6 +88,7 @@ export async function insertAttachment(
     organization_id: organizationId,
     order_id: input.orderId ?? null,
     repair_ticket_id: input.repairTicketId ?? null,
+    quote_id: input.quoteId ?? null,
     file_name: input.fileName,
     file_type: input.fileType,
     storage_path: input.storagePath,

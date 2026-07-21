@@ -13,7 +13,16 @@ import type { RecordAttachmentInput } from "@/lib/validation/attachments";
 
 export async function createOrderAction(input: CreateOrderInput): Promise<CreateOrderResult> {
   const ctx = await requireOrgContext();
-  return createOrder(ctx.supabase, ctx.activeMembership.organization_id, ctx.userId, input);
+  const result = await createOrder(ctx.supabase, ctx.activeMembership.organization_id, ctx.userId, input);
+  if (input.convertedFromQuoteId) {
+    revalidatePath(`/quotes/${input.convertedFromQuoteId}`);
+    revalidatePath("/quotes");
+  }
+  if (input.convertedFromRequestId) {
+    revalidatePath(`/requests/${input.convertedFromRequestId}`);
+    revalidatePath("/requests");
+  }
+  return result;
 }
 
 export async function changeOrderStatusAction(orderId: string, statusId: string) {

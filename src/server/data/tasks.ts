@@ -60,6 +60,8 @@ export async function insertTask(
     customerId?: string;
     requestId?: string;
     repairTicketId?: string;
+    quoteId?: string;
+    proofId?: string;
   },
 ) {
   const { error } = await supabase.from("tasks").insert({
@@ -71,6 +73,8 @@ export async function insertTask(
     customer_id: input.customerId ?? null,
     request_id: input.requestId ?? null,
     repair_ticket_id: input.repairTicketId ?? null,
+    quote_id: input.quoteId ?? null,
+    proof_id: input.proofId ?? null,
     created_by: userId,
   });
   if (error) throw error;

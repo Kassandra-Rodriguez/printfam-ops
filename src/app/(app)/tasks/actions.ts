@@ -13,6 +13,7 @@ export async function createTaskAction(input: CreateTaskInput) {
   if (input.orderId) revalidatePath(`/orders/${input.orderId}`);
   if (input.requestId) revalidatePath(`/requests/${input.requestId}`);
   if (input.repairTicketId) revalidatePath(`/repairs/${input.repairTicketId}`);
+  if (input.quoteId) revalidatePath(`/quotes/${input.quoteId}`);
   revalidatePath("/dashboard");
   return result;
 }

@@ -11,6 +11,9 @@ import { requireOrgContext } from "@/server/authz/session";
 import { getRepairTicket } from "@/server/data/repairs";
 import { getWorkflowStatuses } from "@/server/data/workflow";
 import { listAttachmentsForRepairTicket, getAttachmentSignedUrl } from "@/server/data/attachments";
+import { listProofsForRepairTicket } from "@/server/data/proofs";
+import { buildProofViews } from "@/server/domain/proofs/buildProofViews";
+import { ProofsSection } from "@/components/proofs/proofs-section";
 import { RepairStatusControl } from "./status-control";
 import { RecordRepairPaymentDialog } from "./record-payment-dialog";
 import { RepairFiles, type RepairFileRow } from "./repair-files";
@@ -43,9 +46,12 @@ export default async function RepairDetailPage({
   const ticket = await getRepairTicket(ctx.supabase, id);
   if (!ticket || ticket.organization_id !== organizationId) notFound();
 
-  const [statuses, attachments] = await Promise.all([
+  const [statuses, attachments, proofs] = await Promise.all([
     getWorkflowStatuses(ctx.supabase, organizationId, "repair_ticket"),
     listAttachmentsForRepairTicket(ctx.supabase, organizationId, ticket.id),
+    listProofsForRepairTicket(ctx.supabase, organizationId, ticket.id).then((rows) =>
+      buildProofViews(ctx.supabase, rows),
+    ),
   ]);
 
   const files: RepairFileRow[] = await Promise.all(
@@ -250,6 +256,12 @@ export default async function RepairDetailPage({
                   <p className="mt-0.5 whitespace-pre-wrap">{ticket.completed_summary}</p>
                 </div>
               ) : null}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <ProofsSection proofs={proofs} organizationId={organizationId} repairTicketId={ticket.id} />
             </CardContent>
           </Card>
 

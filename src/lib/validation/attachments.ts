@@ -21,12 +21,13 @@ export const recordAttachmentSchema = z
   .object({
     orderId: z.string().uuid().optional(),
     repairTicketId: z.string().uuid().optional(),
+    quoteId: z.string().uuid().optional(),
     fileName: z.string().trim().min(1),
     fileType: z.enum(ALLOWED_ATTACHMENT_MIME_TYPES),
     storagePath: z.string().trim().min(1),
     description: z.string().trim().optional(),
   })
-  .refine((data) => Boolean(data.orderId) !== Boolean(data.repairTicketId), {
+  .refine((data) => [data.orderId, data.repairTicketId, data.quoteId].filter(Boolean).length === 1, {
     message: "Attachment must belong to exactly one record",
   });
 

@@ -4,6 +4,7 @@ import { createOrderSchema, type CreateOrderInput } from "@/lib/validation/order
 import { nextOrderNumber } from "@/server/data/orders";
 import { insertPayment, recomputeOrderBalance } from "@/server/data/payments";
 import { finalizeRequestConversion } from "@/server/domain/requests/convertRequestToOrder";
+import { finalizeQuoteConversion } from "@/server/domain/quotes/finalizeQuoteConversion";
 
 export type CreateOrderResult =
   | { status: "created"; orderId: string; orderNumber: string }
@@ -149,6 +150,9 @@ export async function createOrder(
 
     if (data.convertedFromRequestId) {
       await finalizeRequestConversion(supabase, organizationId, data.convertedFromRequestId, order.id);
+    }
+    if (data.convertedFromQuoteId) {
+      await finalizeQuoteConversion(supabase, organizationId, data.convertedFromQuoteId, order.id);
     }
 
     return { status: "created", orderId: order.id, orderNumber: order.order_number };

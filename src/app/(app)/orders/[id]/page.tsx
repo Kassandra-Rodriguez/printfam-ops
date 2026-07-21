@@ -13,6 +13,9 @@ import { getOrder } from "@/server/data/orders";
 import { getWorkflowStatuses } from "@/server/data/workflow";
 import { listAttachmentsForOrder, getAttachmentSignedUrl } from "@/server/data/attachments";
 import { resolveOrderWorkflowEntityType } from "@/server/domain/workflow/resolveOrderWorkflow";
+import { listProofsForOrder } from "@/server/data/proofs";
+import { buildProofViews } from "@/server/domain/proofs/buildProofViews";
+import { ProofsSection } from "@/components/proofs/proofs-section";
 import { StatusControl } from "./status-control";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { OrderFiles, type OrderFileRow } from "./order-files";
@@ -44,9 +47,12 @@ export default async function OrderDetailPage({
   if (!order || order.organization_id !== organizationId) notFound();
 
   const entityType = resolveOrderWorkflowEntityType(order.order_type, order.requires_production);
-  const [statuses, attachments] = await Promise.all([
+  const [statuses, attachments, proofs] = await Promise.all([
     getWorkflowStatuses(ctx.supabase, organizationId, entityType),
     listAttachmentsForOrder(ctx.supabase, organizationId, order.id),
+    listProofsForOrder(ctx.supabase, organizationId, order.id).then((rows) =>
+      buildProofViews(ctx.supabase, rows),
+    ),
   ]);
 
   const files: OrderFileRow[] = await Promise.all(
@@ -151,6 +157,12 @@ export default async function OrderDetailPage({
                 <SummaryRow label="Total" value={order.total} bold />
                 <SummaryRow label="Balance remaining" value={order.balance_remaining} highlight />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <ProofsSection proofs={proofs} organizationId={organizationId} orderId={order.id} />
             </CardContent>
           </Card>
 

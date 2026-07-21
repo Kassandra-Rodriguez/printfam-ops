@@ -83,13 +83,18 @@ export default async function RequestDetailPage({
           </Link>
         </div>
       ) : (
-        <div className="mt-4">
+        <div className="mt-4 flex items-center gap-2">
           <Button asChild size="sm">
             <Link
               href={`/orders/new?fromRequestId=${request.id}&customerId=${request.customer?.id}&title=${encodeURIComponent(request.title)}`}
             >
               Convert to Order
               <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/quotes/new?fromRequestId=${request.id}&customerId=${request.customer?.id}`}>
+              Create Quote
             </Link>
           </Button>
         </div>

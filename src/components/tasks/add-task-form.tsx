@@ -12,11 +12,15 @@ export function AddTaskForm({
   customerId,
   requestId,
   repairTicketId,
+  quoteId,
+  proofId,
 }: {
   orderId?: string;
   customerId?: string;
   requestId?: string;
   repairTicketId?: string;
+  quoteId?: string;
+  proofId?: string;
 }) {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -36,6 +40,8 @@ export function AddTaskForm({
       customerId,
       requestId,
       repairTicketId,
+      quoteId,
+      proofId,
     });
     setTitle("");
     setDueDate("");

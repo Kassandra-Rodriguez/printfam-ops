@@ -48,7 +48,17 @@ type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 type EntityType = "order_custom" | "order_existing_product" | "order_service";
 
-function buildDefaultValues(initialCustomerId?: string, initialTitle?: string): CreateOrderInput {
+function buildDefaultValues(
+  initialCustomerId?: string,
+  initialTitle?: string,
+  initialItems?: CreateOrderInput["items"],
+  initialPricing?: {
+    discountTotal: number;
+    taxTotal: number;
+    shippingCost: number;
+    depositRequired: number;
+  },
+): CreateOrderInput {
   return {
     customerId: initialCustomerId ?? "",
     title: initialTitle ?? "",
@@ -56,14 +66,14 @@ function buildDefaultValues(initialCustomerId?: string, initialTitle?: string): 
     requiresProduction: true,
     statusId: "",
     totalAmount: undefined,
-    items: [],
+    items: initialItems ?? [],
     promisedDate: "",
     internalDeadline: "",
     notes: "",
-    discountTotal: 0,
-    taxTotal: 0,
-    shippingCost: 0,
-    depositRequired: 0,
+    discountTotal: initialPricing?.discountTotal ?? 0,
+    taxTotal: initialPricing?.taxTotal ?? 0,
+    shippingCost: initialPricing?.shippingCost ?? 0,
+    depositRequired: initialPricing?.depositRequired ?? 0,
     backfillStatuses: [],
     backfillPayments: [],
   };
@@ -73,23 +83,34 @@ export function CreateOrderForm({
   customers,
   statusesByEntityType,
   convertedFromRequestId,
+  convertedFromQuoteId,
   initialCustomerId,
   initialTitle,
+  initialItems,
+  initialPricing,
 }: {
   customers: { id: string; name: string }[];
   statusesByEntityType: Record<EntityType, WorkflowStatus[]>;
   convertedFromRequestId?: string;
+  convertedFromQuoteId?: string;
   initialCustomerId?: string;
   initialTitle?: string;
+  initialItems?: CreateOrderInput["items"];
+  initialPricing?: {
+    discountTotal: number;
+    taxTotal: number;
+    shippingCost: number;
+    depositRequired: number;
+  };
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"quick" | "detailed">("quick");
+  const [mode, setMode] = useState<"quick" | "detailed">(initialItems && initialItems.length > 0 ? "detailed" : "quick");
   const [restoredDraft, setRestoredDraft] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<CreateOrderInput>({
     resolver: zodResolver(createOrderSchema),
-    defaultValues: buildDefaultValues(initialCustomerId, initialTitle),
+    defaultValues: buildDefaultValues(initialCustomerId, initialTitle, initialItems, initialPricing),
   });
 
   const itemsArray = useFieldArray({ control: form.control, name: "items" });
@@ -115,7 +136,7 @@ export function CreateOrderForm({
   // unfinished order entry is not lost") — restore once on mount. Skipped when
   // converting a request: that prefill should win over an unrelated old draft.
   useEffect(() => {
-    if (convertedFromRequestId) return;
+    if (convertedFromRequestId || convertedFromQuoteId) return;
     const saved = window.localStorage.getItem(DRAFT_KEY);
     if (saved) {
       try {
@@ -146,6 +167,7 @@ export function CreateOrderForm({
     const payload: CreateOrderInput = {
       ...(mode === "quick" ? { ...values, items: [], backfillStatuses: [], backfillPayments: [] } : values),
       convertedFromRequestId,
+      convertedFromQuoteId,
     };
 
     const result = await createOrderAction(payload);

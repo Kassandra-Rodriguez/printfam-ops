@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/format";
 import { completeTaskAction } from "@/app/(app)/tasks/actions";
 import type { TaskRow as TaskRowData } from "@/server/data/tasks";
@@ -15,13 +16,19 @@ const PRIORITY_LABEL: Record<string, string> = {
 
 export function TaskRow({ task, showOrderLink = true }: { task: TaskRowData; showOrderLink?: boolean }) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   return (
     <div className="flex items-center gap-3 border-b px-4 py-2.5 text-sm last:border-0">
       <input
         type="checkbox"
         disabled={isPending}
-        onChange={() => startTransition(() => completeTaskAction(task.id, task.order_id ?? undefined))}
+        onChange={() =>
+          startTransition(async () => {
+            await completeTaskAction(task.id, task.order_id ?? undefined);
+            router.refresh();
+          })
+        }
         className="size-4"
         aria-label={`Mark "${task.title}" complete`}
       />
