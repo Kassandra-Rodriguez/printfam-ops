@@ -4,9 +4,10 @@ import { updateRepairTicketApproval } from "@/server/data/repairs";
 
 /**
  * Records the customer's approve/decline decision on the recommended repair
- * (docs/user_flows.md Flow D step 3). Only the "staff relays it" path exists
- * for now — the portal-token version of this (Flow J) is scoped to Phase 7
- * per docs/build_phases.md, not retrofitted here.
+ * (docs/user_flows.md Flow D step 3). Called from both the staff-relayed
+ * Server Action and the portal Route Handler (Flow J,
+ * app/api/portal/[token]/repair-approval) — one function, two callers, per
+ * docs/security.md #4.6.
  */
 export async function setRepairApproval(
   supabase: SupabaseClient,

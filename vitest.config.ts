@@ -11,6 +11,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Next.js resolves "server-only" to a no-op via its "react-server"
+      // export condition (see node_modules/server-only/package.json); Vitest
+      // doesn't know that condition, so without this alias every test that
+      // imports a Route Handler (which transitively imports server-only
+      // domain modules) would hit the package's intentional throw. Test-only
+      // — doesn't touch how Next.js actually builds/runs the app.
+      "server-only": path.resolve(__dirname, "./node_modules/server-only/empty.js"),
     },
   },
 });

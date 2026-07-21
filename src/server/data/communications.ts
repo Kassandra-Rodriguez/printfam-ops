@@ -89,3 +89,47 @@ export async function insertCommunication(
 
   return { conversationId: conversation.id as string };
 }
+
+/**
+ * docs/user_flows.md Flow J: a message the customer typed in the portal.
+ * `channel: 'other'` — the channel enum models external channels
+ * (Instagram/text/email/...); the portal itself isn't one of those, and the
+ * source spec doesn't define a dedicated value for it. `recorded_by` stays
+ * null and `sent_by_customer: true` is the actor tag activity_logs-style
+ * code elsewhere uses (docs/security.md #4.6).
+ */
+export async function insertPortalMessage(
+  supabase: SupabaseClient,
+  organizationId: string,
+  input: {
+    customerId: string;
+    body: string;
+    relatedOrderId?: string;
+    relatedRepairTicketId?: string;
+  },
+) {
+  const { data: conversation, error: conversationError } = await supabase
+    .from("conversations")
+    .insert({
+      organization_id: organizationId,
+      customer_id: input.customerId,
+      channel: "other",
+      related_order_id: input.relatedOrderId ?? null,
+      related_repair_ticket_id: input.relatedRepairTicketId ?? null,
+    })
+    .select("id")
+    .single();
+  if (conversationError) throw conversationError;
+
+  const { error: messageError } = await supabase.from("messages").insert({
+    conversation_id: conversation.id,
+    organization_id: organizationId,
+    direction: "incoming",
+    body: input.body,
+    occurred_at: new Date().toISOString(),
+    recorded_by: null,
+    sent_by_customer: true,
+    follow_up_required: false,
+  });
+  if (messageError) throw messageError;
+}

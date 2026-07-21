@@ -1,11 +1,21 @@
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
 import { validatePortalToken } from "@/server/domain/portal/validatePortalToken";
-import { getQuoteForPortal } from "@/server/data/portalViews";
+import {
+  getQuoteForPortal,
+  getOrderForPortal,
+  getRepairTicketForPortal,
+  getMessagesForPortal,
+  getCustomerVisibleAttachments,
+} from "@/server/data/portalViews";
 import { getProof } from "@/server/data/proofs";
+import { getAttachmentSignedUrl } from "@/server/data/attachments";
 import { buildProofViews } from "@/server/domain/proofs/buildProofViews";
 import { markQuoteViewed } from "@/server/domain/quotes/markQuoteViewed";
 import { QuotePortalView } from "./quote-view";
 import { ProofPortalView } from "./proof-view";
+import { OrderPortalView } from "./order-view";
+import { RepairPortalView } from "./repair-view";
+import type { PortalFileRow } from "./file-upload";
 
 const EXPIRED_MESSAGE: Record<string, string> = {
   not_found: "This link isn't valid. Contact PrintFam for a new one.",
@@ -56,11 +66,55 @@ export default async function PortalPage({ params }: { params: Promise<{ token: 
     );
   }
 
-  // order/repair_ticket scopes: the full unified portal view ships in Phase 7
-  // (docs/build_phases.md) — Phase 6 only issues quote/proof tokens, so this
-  // branch isn't reachable yet, but fails closed rather than crashing if it
-  // ever is.
+  if (resolution.scopeType === "order") {
+    const order = await getOrderForPortal(supabase, resolution.organizationId, resolution.scopeId);
+    if (!order) {
+      return <PortalShell>{EXPIRED_MESSAGE.not_found}</PortalShell>;
+    }
+    const [messages, files] = await Promise.all([
+      getMessagesForPortal(supabase, resolution.organizationId, { orderId: order.id }),
+      resolveFiles(supabase, resolution.organizationId, { orderId: order.id }),
+    ]);
+    return (
+      <PortalShell>
+        <OrderPortalView token={token} order={order} messages={messages} files={files} />
+      </PortalShell>
+    );
+  }
+
+  if (resolution.scopeType === "repair_ticket") {
+    const ticket = await getRepairTicketForPortal(supabase, resolution.organizationId, resolution.scopeId);
+    if (!ticket) {
+      return <PortalShell>{EXPIRED_MESSAGE.not_found}</PortalShell>;
+    }
+    const [messages, files] = await Promise.all([
+      getMessagesForPortal(supabase, resolution.organizationId, { repairTicketId: ticket.id }),
+      resolveFiles(supabase, resolution.organizationId, { repairTicketId: ticket.id }),
+    ]);
+    return (
+      <PortalShell>
+        <RepairPortalView token={token} ticket={ticket} messages={messages} files={files} />
+      </PortalShell>
+    );
+  }
+
   return <PortalShell>This link isn&apos;t available yet. Contact PrintFam.</PortalShell>;
+}
+
+async function resolveFiles(
+  supabase: ReturnType<typeof createServiceRoleSupabaseClient>,
+  organizationId: string,
+  scope: { orderId?: string; repairTicketId?: string },
+): Promise<PortalFileRow[]> {
+  const attachments = await getCustomerVisibleAttachments(supabase, organizationId, scope);
+  return Promise.all(
+    attachments.map(async (a) => ({
+      id: a.id,
+      file_name: a.file_name,
+      file_type: a.file_type,
+      signedUrl: await getAttachmentSignedUrl(supabase, a.storage_path),
+    })),
+  );
 }
 
 function PortalShell({ children }: { children: React.ReactNode }) {

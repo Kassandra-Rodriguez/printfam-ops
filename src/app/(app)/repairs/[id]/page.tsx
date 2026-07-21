@@ -14,6 +14,7 @@ import { listAttachmentsForRepairTicket, getAttachmentSignedUrl } from "@/server
 import { listProofsForRepairTicket } from "@/server/data/proofs";
 import { buildProofViews } from "@/server/domain/proofs/buildProofViews";
 import { ProofsSection } from "@/components/proofs/proofs-section";
+import { SharePortalLinkButton } from "@/components/portal/share-portal-link-button";
 import { RepairStatusControl } from "./status-control";
 import { RecordRepairPaymentDialog } from "./record-payment-dialog";
 import { RepairFiles, type RepairFileRow } from "./repair-files";
@@ -130,6 +131,7 @@ export default async function RepairDetailPage({
               <Link href={`/repairs/${ticket.id}/edit`}>Edit</Link>
             </Button>
           </div>
+          <SharePortalLinkButton scopeType="repair_ticket" scopeId={ticket.id} customerId={ticket.customer_id} />
         </div>
       </div>
 

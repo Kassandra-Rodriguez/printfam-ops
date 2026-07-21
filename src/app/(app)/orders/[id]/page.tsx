@@ -16,6 +16,7 @@ import { resolveOrderWorkflowEntityType } from "@/server/domain/workflow/resolve
 import { listProofsForOrder } from "@/server/data/proofs";
 import { buildProofViews } from "@/server/domain/proofs/buildProofViews";
 import { ProofsSection } from "@/components/proofs/proofs-section";
+import { SharePortalLinkButton } from "@/components/portal/share-portal-link-button";
 import { StatusControl } from "./status-control";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { OrderFiles, type OrderFileRow } from "./order-files";
@@ -119,6 +120,7 @@ export default async function OrderDetailPage({
               <Link href={`/orders/${order.id}/edit`}>Edit</Link>
             </Button>
           </div>
+          <SharePortalLinkButton scopeType="order" scopeId={order.id} customerId={order.customer_id} />
           <Badge variant="secondary">{ORDER_TYPE_LABELS[order.order_type] ?? order.order_type}</Badge>
         </div>
       </div>

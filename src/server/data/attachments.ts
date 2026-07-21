@@ -73,7 +73,7 @@ export async function getAttachmentSignedUrl(
 export async function insertAttachment(
   supabase: SupabaseClient,
   organizationId: string,
-  userId: string,
+  userId: string | null,
   input: {
     orderId?: string;
     repairTicketId?: string;
@@ -82,6 +82,8 @@ export async function insertAttachment(
     fileType: string;
     storagePath: string;
     description?: string;
+    /** Defaults to internal_only for staff uploads; portal uploads (uploaded_by=null) pass customer_visible explicitly. */
+    visibility?: "internal_only" | "customer_visible";
   },
 ) {
   const { error } = await supabase.from("attachments").insert({
@@ -93,7 +95,7 @@ export async function insertAttachment(
     file_type: input.fileType,
     storage_path: input.storagePath,
     description: input.description ?? null,
-    visibility: "internal_only",
+    visibility: input.visibility ?? "internal_only",
     uploaded_by: userId,
   });
   if (error) throw error;
