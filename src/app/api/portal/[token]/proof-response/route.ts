@@ -3,6 +3,7 @@ import { validatePortalToken } from "@/server/domain/portal/validatePortalToken"
 import { checkPortalRateLimit, getRequestIp } from "@/server/domain/portal/rateLimit";
 import { recordProofResponse } from "@/server/domain/proofs/recordProofResponse";
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
+import { notifyOrgMembers } from "@/server/data/notifications";
 
 /**
  * docs/user_flows.md Flow F step 3. `proofVersionId` in the body is never
@@ -61,5 +62,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
+
+  await notifyOrgMembers(supabase, resolution.organizationId, {
+    type: response === "approved" ? "proof_approved" : "proof_revision_requested",
+    entityType: "proof",
+    entityId: resolution.scopeId,
+    message: response === "approved" ? "A customer approved a proof" : "A customer requested a proof revision",
+  });
+
   return NextResponse.json({ ok: true });
 }

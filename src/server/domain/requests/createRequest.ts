@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRequestSchema, type CreateRequestInput } from "@/lib/validation/requests";
 import { insertRequest } from "@/server/data/requests";
 import { getWorkflowStatuses } from "@/server/data/workflow";
+import { notifyOrgMembers } from "@/server/data/notifications";
 
 export type CreateRequestResult =
   | { status: "created"; requestId: string }
@@ -28,6 +29,14 @@ export async function createRequest(
     }
 
     const request = await insertRequest(supabase, organizationId, userId, initialStatusId, parsed.data);
+
+    await notifyOrgMembers(supabase, organizationId, {
+      type: "new_request",
+      entityType: "request",
+      entityId: request.id,
+      message: `New request: ${parsed.data.title}`,
+    });
+
     return { status: "created", requestId: request.id };
   } catch (err) {
     console.error("createRequest failed:", err);

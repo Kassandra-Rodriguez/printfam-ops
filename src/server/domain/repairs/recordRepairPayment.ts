@@ -2,6 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { recordPaymentSchema, type RecordPaymentInput } from "@/lib/validation/payments";
 import { insertPayment, recomputeRepairBalance } from "@/server/data/payments";
+import { notifyOrgMembers } from "@/server/data/notifications";
+import { formatCurrency } from "@/lib/format";
 
 export type RecordRepairPaymentResult = { ok: true } | { ok: false; error: string };
 
@@ -33,6 +35,14 @@ export async function recordRepairPayment(
       notes: parsed.data.notes,
     });
     await recomputeRepairBalance(supabase, parsed.data.repairTicketId);
+
+    await notifyOrgMembers(supabase, organizationId, {
+      type: "payment_recorded",
+      entityType: "repair_ticket",
+      entityId: parsed.data.repairTicketId,
+      message: `Payment recorded: ${formatCurrency(parsed.data.amount)}`,
+    });
+
     return { ok: true };
   } catch (err) {
     console.error("recordRepairPayment failed:", err);

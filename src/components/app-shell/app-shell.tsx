@@ -2,20 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Plus, Search } from "lucide-react";
+import { Menu, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "./sidebar-nav";
 import { UserMenu } from "./user-menu";
+import { NotificationsBell } from "./notifications-bell";
+import { GlobalSearch } from "./global-search";
+import type { NotificationRow } from "@/server/data/notifications";
 
 export function AppShell({
   organizationName,
   userEmail,
+  notifications,
+  unreadCount,
   children,
 }: {
   organizationName: string;
   userEmail: string;
+  notifications: NotificationRow[];
+  unreadCount: number;
   children: React.ReactNode;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -51,15 +57,7 @@ export function AppShell({
             PrintFam Ops
           </Link>
 
-          <div className="relative ml-auto hidden max-w-sm flex-1 md:block">
-            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              disabled
-              placeholder="Search — ships in a later phase"
-              className="pl-8"
-              title="Global search is not built yet (docs/build_phases.md Phase 8)"
-            />
-          </div>
+          <GlobalSearch />
 
           <Button
             size="sm"
@@ -71,6 +69,7 @@ export function AppShell({
             New
           </Button>
 
+          <NotificationsBell notifications={notifications} unreadCount={unreadCount} />
           <UserMenu email={userEmail} />
         </header>
 

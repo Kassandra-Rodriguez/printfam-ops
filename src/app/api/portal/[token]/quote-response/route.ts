@@ -3,6 +3,7 @@ import { validatePortalToken } from "@/server/domain/portal/validatePortalToken"
 import { checkPortalRateLimit, getRequestIp } from "@/server/domain/portal/rateLimit";
 import { recordQuoteResponse } from "@/server/domain/quotes/recordQuoteResponse";
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
+import { notifyOrgMembers } from "@/server/data/notifications";
 
 /**
  * docs/user_flows.md Flow E step 4 / Flow J, docs/security.md #4. Route
@@ -46,5 +47,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
+
+  await notifyOrgMembers(supabase, resolution.organizationId, {
+    type: response === "approved" ? "quote_approved" : "quote_declined",
+    entityType: "quote",
+    entityId: resolution.scopeId,
+    message: `A customer ${response} their quote`,
+  });
+
   return NextResponse.json({ ok: true });
 }

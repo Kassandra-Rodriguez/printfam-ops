@@ -2,6 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { recordPaymentSchema, type RecordPaymentInput } from "@/lib/validation/payments";
 import { insertPayment, recomputeOrderBalance } from "@/server/data/payments";
+import { notifyOrgMembers } from "@/server/data/notifications";
+import { formatCurrency } from "@/lib/format";
 
 export type RecordPaymentResult = { ok: true } | { ok: false; error: string };
 
@@ -33,6 +35,14 @@ export async function recordOrderPayment(
       notes: parsed.data.notes,
     });
     await recomputeOrderBalance(supabase, parsed.data.orderId);
+
+    await notifyOrgMembers(supabase, organizationId, {
+      type: "payment_recorded",
+      entityType: "order",
+      entityId: parsed.data.orderId,
+      message: `Payment recorded: ${formatCurrency(parsed.data.amount)}`,
+    });
+
     return { ok: true };
   } catch (err) {
     console.error("recordOrderPayment failed:", err);

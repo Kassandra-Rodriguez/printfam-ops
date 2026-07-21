@@ -3,6 +3,7 @@ import { validatePortalToken } from "@/server/domain/portal/validatePortalToken"
 import { checkPortalRateLimit, getRequestIp } from "@/server/domain/portal/rateLimit";
 import { sendPortalMessage } from "@/server/domain/communications/sendPortalMessage";
 import { createServiceRoleSupabaseClient } from "@/lib/supabase/server";
+import { notifyOrgMembers } from "@/server/data/notifications";
 
 /**
  * docs/user_flows.md Flow J step 2 ("send a message"). Conversations only
@@ -39,5 +40,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
+
+  await notifyOrgMembers(supabase, resolution.organizationId, {
+    type: "message_received",
+    entityType: resolution.scopeType,
+    entityId: resolution.scopeId,
+    message: "New message from a customer",
+  });
+
   return NextResponse.json({ ok: true });
 }

@@ -7,6 +7,7 @@ export type OrderListRow = {
   order_number: string;
   title: string | null;
   order_type: string;
+  source: string | null;
   promised_date: string | null;
   total: number;
   balance_remaining: number;
@@ -15,20 +16,33 @@ export type OrderListRow = {
   status: { id: string; key: string; label: string; category: StatusCategory } | null;
 };
 
-const ORDER_LIST_SELECT =
-  "id, order_number, title, order_type, promised_date, total, balance_remaining, created_at, " +
-  "customer:customers(id, display_name), status:workflow_statuses(id, key, label, category)";
+export type OrderListFilters = {
+  orderType?: string;
+  statusCategory?: string;
+  source?: string;
+};
 
+const ORDER_LIST_SELECT =
+  "id, order_number, title, order_type, source, promised_date, total, balance_remaining, created_at, " +
+  "customer:customers(id, display_name), status:workflow_statuses!inner(id, key, label, category)";
+
+/** docs/build_phases.md Phase 8: filters + saved filters — the first list page to get real filtering (screens.md's "per-module filters" list). */
 export async function listOrders(
   supabase: SupabaseClient,
   organizationId: string,
+  filters: OrderListFilters = {},
 ): Promise<OrderListRow[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("orders")
     .select(ORDER_LIST_SELECT)
     .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+    .is("deleted_at", null);
+
+  if (filters.orderType) query = query.eq("order_type", filters.orderType);
+  if (filters.source) query = query.eq("source", filters.source);
+  if (filters.statusCategory) query = query.eq("status.category", filters.statusCategory);
+
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) throw error;
   return (data ?? []) as unknown as OrderListRow[];
@@ -156,6 +170,36 @@ export async function replaceOrderItems(
     })),
   );
   if (insertError) throw insertError;
+}
+
+export type OrderCalendarRow = {
+  id: string;
+  order_number: string;
+  title: string | null;
+  promised_date: string;
+  status: { label: string; category: string } | null;
+  customer: { display_name: string } | null;
+};
+
+/** docs/build_phases.md Phase 8: calendar view for orders, bucketed by promised_date. */
+export async function listOrdersForCalendar(
+  supabase: SupabaseClient,
+  organizationId: string,
+  rangeStart: string,
+  rangeEnd: string,
+): Promise<OrderCalendarRow[]> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, order_number, title, promised_date, status:workflow_statuses(label, category), customer:customers(display_name)")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .not("promised_date", "is", null)
+    .gte("promised_date", rangeStart)
+    .lte("promised_date", rangeEnd)
+    .order("promised_date", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as unknown as OrderCalendarRow[];
 }
 
 /** Catalog-linked line items only — the ones an inventory-status trigger actually moves stock for (server/domain/orders/applyInventoryTrigger.ts). */

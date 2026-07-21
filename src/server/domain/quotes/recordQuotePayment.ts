@@ -2,6 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { recordPaymentSchema, type RecordPaymentInput } from "@/lib/validation/payments";
 import { insertPayment } from "@/server/data/payments";
+import { notifyOrgMembers } from "@/server/data/notifications";
+import { formatCurrency } from "@/lib/format";
 
 export type RecordPaymentResult = { ok: true } | { ok: false; error: string };
 
@@ -32,6 +34,14 @@ export async function recordQuotePayment(
       referenceNumber: parsed.data.referenceNumber,
       notes: parsed.data.notes,
     });
+
+    await notifyOrgMembers(supabase, organizationId, {
+      type: "payment_recorded",
+      entityType: "quote",
+      entityId: parsed.data.quoteId,
+      message: `Payment recorded: ${formatCurrency(parsed.data.amount)}`,
+    });
+
     return { ok: true };
   } catch (err) {
     console.error("recordQuotePayment failed:", err);
