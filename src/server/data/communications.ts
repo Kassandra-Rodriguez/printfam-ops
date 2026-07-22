@@ -18,6 +18,76 @@ export type CommunicationListRow = {
   } | null;
 };
 
+export type ThreadCustomerRow = {
+  id: string;
+  display_name: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  lastChannel: string;
+};
+
+/**
+ * Groups every message by customer for the chat-style inbox — the schema
+ * has no "conversation thread" concept spanning channels, so this is
+ * computed here rather than queried directly, same "small team, small
+ * table" reasoning as server/data/reports.ts.
+ */
+export async function listCustomersWithRecentMessage(
+  supabase: SupabaseClient,
+  organizationId: string,
+): Promise<ThreadCustomerRow[]> {
+  const { data, error } = await supabase
+    .from("messages")
+    .select("body, occurred_at, conversation:conversations!inner(channel, customer:customers(id, display_name))")
+    .eq("organization_id", organizationId)
+    .order("occurred_at", { ascending: false });
+  if (error) throw error;
+
+  const byCustomer = new Map<string, ThreadCustomerRow>();
+  for (const row of (data ?? []) as unknown as {
+    body: string;
+    occurred_at: string;
+    conversation: { channel: string; customer: { id: string; display_name: string } | null } | null;
+  }[]) {
+    const customer = row.conversation?.customer;
+    if (!customer || byCustomer.has(customer.id)) continue;
+    byCustomer.set(customer.id, {
+      id: customer.id,
+      display_name: customer.display_name,
+      lastMessage: row.body,
+      lastMessageAt: row.occurred_at,
+      lastChannel: row.conversation?.channel ?? "other",
+    });
+  }
+  return [...byCustomer.values()];
+}
+
+export type ThreadMessageRow = {
+  id: string;
+  body: string;
+  direction: string;
+  occurred_at: string;
+  sent_by_customer: boolean;
+  channel: string;
+};
+
+export async function listMessagesForCustomerThread(
+  supabase: SupabaseClient,
+  organizationId: string,
+  customerId: string,
+): Promise<ThreadMessageRow[]> {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("channel, messages(id, body, direction, occurred_at, sent_by_customer)")
+    .eq("organization_id", organizationId)
+    .eq("customer_id", customerId);
+  if (error) throw error;
+
+  return ((data ?? []) as unknown as { channel: string; messages: Omit<ThreadMessageRow, "channel">[] }[])
+    .flatMap((c) => c.messages.map((m) => ({ ...m, channel: c.channel })))
+    .sort((a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime());
+}
+
 export async function listRecentCommunications(
   supabase: SupabaseClient,
   organizationId: string,

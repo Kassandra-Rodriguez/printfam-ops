@@ -65,7 +65,7 @@ export function CreateProofDialog({ orderId, repairTicketId }: { orderId?: strin
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="visibility" />
-            Customer-visible (uncheck for an internal-only draft)
+            Customer visible (uncheck for an internal only draft)
           </label>
           <DialogFooter>
             <Button type="submit" disabled={submitting}>

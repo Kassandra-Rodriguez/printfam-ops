@@ -157,7 +157,7 @@ export function LogCommunicationDialog({
                 checked={followUpRequired}
                 onChange={(e) => setFollowUpRequired(e.target.checked)}
               />
-              Needs a follow-up
+              Needs a follow up
             </label>
             {followUpRequired ? (
               <div className="flex flex-col gap-2">

@@ -5,6 +5,7 @@ import { requireOrgContext } from "@/server/authz/session";
 import { renameStatus } from "@/server/domain/workflow/renameStatus";
 import { moveStatus } from "@/server/domain/workflow/moveStatus";
 import { setStatusInventoryTrigger } from "@/server/domain/workflow/setStatusInventoryTrigger";
+import { setEnabledModules } from "@/server/domain/organizations/setEnabledModules";
 import type { WorkflowEntityType } from "@/server/data/workflow";
 
 export async function renameStatusAction(statusId: string, label: string) {
@@ -25,5 +26,12 @@ export async function setStatusInventoryTriggerAction(statusId: string, trigger:
   const ctx = await requireOrgContext();
   const result = await setStatusInventoryTrigger(ctx.supabase, statusId, trigger === "none" ? null : trigger);
   revalidatePath("/settings");
+  return result;
+}
+
+export async function setEnabledModulesAction(modules: string[]) {
+  const ctx = await requireOrgContext();
+  const result = await setEnabledModules(ctx.supabase, ctx.activeMembership.organization_id, modules);
+  revalidatePath("/", "layout");
   return result;
 }

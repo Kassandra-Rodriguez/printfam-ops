@@ -118,7 +118,7 @@ export default async function ReportsPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-1.5 text-sm">
             {summary.popularProducts.length === 0 ? (
-              <p className="text-muted-foreground">No catalog-linked sales yet.</p>
+              <p className="text-muted-foreground">No catalog linked sales yet.</p>
             ) : (
               summary.popularProducts.map((p) => (
                 <div key={p.name} className="flex items-center justify-between">

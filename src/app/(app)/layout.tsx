@@ -15,6 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       userEmail={ctx.email}
       notifications={notifications}
       unreadCount={unreadCount}
+      enabledModules={ctx.activeMembership.organization.enabled_modules}
     >
       {children}
     </AppShell>

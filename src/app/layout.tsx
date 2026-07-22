@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PrintFam Ops",
+  title: "Ops",
   description: "Customer requests, orders, repairs, and proofs in one place.",
 };
 

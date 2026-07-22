@@ -2,7 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { listMembershipsForCurrentUser, type MembershipWithOrg } from "@/server/data/organizations";
+import { listMembershipsForCurrentUser, type MembershipWithOrg, type OptionalModule } from "@/server/data/organizations";
 
 export type OrgContext = {
   supabase: SupabaseClient;
@@ -53,4 +53,18 @@ export async function requireOrgContext(): Promise<OrgContext> {
     memberships,
     activeMembership: memberships[0],
   };
+}
+
+/**
+ * Route-segment guard for togglable modules (Repairs/Quotes/Inventory) —
+ * redirects to /dashboard if the org's Owner has turned this module off,
+ * so a direct URL visit can't reach a disabled feature even though its
+ * pages still exist. Called from each module's own layout.tsx.
+ */
+export async function requireModuleEnabled(module: OptionalModule): Promise<OrgContext> {
+  const ctx = await requireOrgContext();
+  if (!ctx.activeMembership.organization.enabled_modules.includes(module)) {
+    redirect("/dashboard");
+  }
+  return ctx;
 }

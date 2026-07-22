@@ -2,26 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Plus } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "./sidebar-nav";
 import { UserMenu } from "./user-menu";
 import { NotificationsBell } from "./notifications-bell";
 import { GlobalSearch } from "./global-search";
+import { NewMenu } from "./new-menu";
 import type { NotificationRow } from "@/server/data/notifications";
+import type { OptionalModule } from "@/server/data/organizations";
 
 export function AppShell({
   organizationName,
   userEmail,
   notifications,
   unreadCount,
+  enabledModules,
   children,
 }: {
   organizationName: string;
   userEmail: string;
   notifications: NotificationRow[];
   unreadCount: number;
+  enabledModules: OptionalModule[];
   children: React.ReactNode;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -33,7 +37,7 @@ export function AppShell({
           <span className="truncate text-sm font-semibold">{organizationName}</span>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <SidebarNav />
+          <SidebarNav enabledModules={enabledModules} />
         </div>
       </aside>
 
@@ -49,25 +53,17 @@ export function AppShell({
               <SheetHeader className="h-14 justify-center border-b px-4">
                 <SheetTitle className="truncate text-sm">{organizationName}</SheetTitle>
               </SheetHeader>
-              <SidebarNav onNavigate={() => setMobileNavOpen(false)} />
+              <SidebarNav enabledModules={enabledModules} onNavigate={() => setMobileNavOpen(false)} />
             </SheetContent>
           </Sheet>
 
-          <Link href="/dashboard" className="text-sm font-semibold md:hidden">
-            PrintFam Ops
+          <Link href="/dashboard" className="truncate text-sm font-semibold md:hidden">
+            {organizationName}
           </Link>
 
           <GlobalSearch />
 
-          <Button
-            size="sm"
-            disabled
-            className="ml-auto md:ml-0"
-            title="Manual entry ships in Phase 3 (docs/build_phases.md)"
-          >
-            <Plus className="size-4" />
-            New
-          </Button>
+          <NewMenu className="ml-auto md:ml-0" enabledModules={enabledModules} />
 
           <NotificationsBell notifications={notifications} unreadCount={unreadCount} />
           <UserMenu email={userEmail} />

@@ -3,6 +3,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import type { PortalOrderView, PortalMessageView } from "@/server/data/portalViews";
 import { PortalMessageBox } from "./message-box";
 import { PortalFileUpload, type PortalFileRow } from "./file-upload";
+import { PayNowButton } from "./pay-now-button";
 
 const FULFILLMENT_LABELS: Record<string, string> = { pickup: "Pickup", shipping: "Shipping" };
 
@@ -49,6 +50,7 @@ export function OrderPortalView({
             />
           </div>
           {order.promised_date ? <p className="text-xs text-muted-foreground">Due {formatDate(order.promised_date)}</p> : null}
+          {order.balance_remaining > 0 ? <PayNowButton token={token} amount={order.balance_remaining} /> : null}
         </CardContent>
       </Card>
 

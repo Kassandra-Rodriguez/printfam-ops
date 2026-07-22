@@ -12,7 +12,7 @@ export function RepairsTable({ repairs }: { repairs: RepairListRow[] }) {
         <EmptyState
           icon={Wrench}
           title="No repairs yet"
-          description="Repair tickets you create will show up here — including devices already mid-repair."
+          description="Repair tickets you create will show up here — including devices already mid repair."
         />
       </div>
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,12 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/format";
 import type { PortalMessageView } from "@/server/data/portalViews";
 
+/** Async, not real-time — polls so a staff reply shows up without the customer manually reloading (docs/architecture.md #9: no Supabase Realtime wired up). */
+const POLL_INTERVAL_MS = 8000;
+
 /** docs/user_flows.md Flow J step 2 — shared across every portal scope type (screens.md #23's "message box"). */
 export function PortalMessageBox({ token, messages }: { token: string; messages: PortalMessageView[] }) {
   const [body, setBody] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [router]);
 
   function send() {
     if (!body.trim()) return;

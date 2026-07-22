@@ -25,7 +25,7 @@ export default async function OrdersPage({
         <div>
           <h1 className="text-lg font-semibold">Orders</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Custom, existing-product, bulk, and service orders — including ones already
+            Custom, existing product, bulk, and service orders — including ones already
             in progress.
           </p>
         </div>

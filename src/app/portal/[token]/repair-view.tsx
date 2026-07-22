@@ -8,6 +8,7 @@ import { formatCurrency, formatDateTime } from "@/lib/format";
 import type { PortalRepairTicketView, PortalMessageView } from "@/server/data/portalViews";
 import { PortalMessageBox } from "./message-box";
 import { PortalFileUpload, type PortalFileRow } from "./file-upload";
+import { PayNowButton } from "./pay-now-button";
 
 export function RepairPortalView({
   token,
@@ -60,6 +61,7 @@ export function RepairPortalView({
           <div className="border-t pt-3">
             <Row label="Balance" value={ticket.final_balance > 0 ? formatCurrency(ticket.final_balance) : "Paid in full"} bold />
           </div>
+          {ticket.final_balance > 0 ? <PayNowButton token={token} amount={ticket.final_balance} /> : null}
           {ticket.warranty_period_days ? (
             <p className="text-xs text-muted-foreground">Warranty: {ticket.warranty_period_days} days</p>
           ) : null}

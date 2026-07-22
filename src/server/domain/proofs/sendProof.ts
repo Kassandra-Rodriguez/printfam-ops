@@ -15,6 +15,7 @@ export async function sendProof(
   organizationId: string,
   userId: string,
   proofId: string,
+  forceReissue: boolean = false,
 ): Promise<SendProofResult> {
   try {
     const { data: proof, error: proofError } = await supabase
@@ -50,7 +51,7 @@ export async function sendProof(
       return { ok: false, error: "Upload a version before sending." };
     }
 
-    const issued = await issuePortalToken(organizationId, customerId, "proof", proofId, userId);
+    const issued = await issuePortalToken(organizationId, customerId, "proof", proofId, userId, undefined, forceReissue);
 
     if (!latestVersion.sent_at) {
       const { error: sentError } = await supabase

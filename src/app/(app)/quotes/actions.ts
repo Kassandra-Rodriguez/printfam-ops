@@ -40,9 +40,9 @@ export async function changeQuoteStatusAction(quoteId: string, statusId: string)
   return result;
 }
 
-export async function sendQuoteAction(quoteId: string) {
+export async function sendQuoteAction(quoteId: string, forceReissue: boolean = false) {
   const ctx = await requireOrgContext();
-  const result = await sendQuote(ctx.supabase, ctx.activeMembership.organization_id, ctx.userId, quoteId);
+  const result = await sendQuote(ctx.supabase, ctx.activeMembership.organization_id, ctx.userId, quoteId, forceReissue);
   revalidatePath(`/quotes/${quoteId}`);
   revalidatePath("/quotes");
   return result;

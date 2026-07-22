@@ -64,7 +64,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     });
   } catch (err) {
     console.error("portal upload: attachment insert failed:", err);
-    return NextResponse.json({ error: "Upload saved, but couldn't attach it. Contact PrintFam." }, { status: 500 });
+    return NextResponse.json({ error: "Upload saved, but couldn't attach it. Contact the business you're working with." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

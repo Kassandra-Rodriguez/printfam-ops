@@ -34,13 +34,13 @@ export function CreateOrganizationForm() {
                 setName(e.target.value);
                 if (!slugEdited) setSlug(slugify(e.target.value));
               }}
-              placeholder="PrintFam"
+              placeholder="Your Business Name"
             />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="slug">Workspace URL</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">app.printfam.ops/</span>
+              <span className="text-sm text-muted-foreground">app.example.com/</span>
               <Input
                 id="slug"
                 name="slug"
@@ -50,7 +50,7 @@ export function CreateOrganizationForm() {
                   setSlugEdited(true);
                   setSlug(slugify(e.target.value));
                 }}
-                placeholder="printfam"
+                placeholder="your-business"
               />
             </div>
           </div>

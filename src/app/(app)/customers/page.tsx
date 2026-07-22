@@ -16,7 +16,7 @@ export default async function CustomersPage() {
         <div>
           <h1 className="text-lg font-semibold">Customers</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Every person or business PrintFam has worked with, in one profile.
+            Every person or business you&apos;ve worked with, in one profile.
           </p>
         </div>
         <Button asChild size="sm">

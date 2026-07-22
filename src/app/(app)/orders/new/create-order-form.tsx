@@ -275,7 +275,7 @@ export function CreateOrderForm({
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" {...form.register("requiresProduction")} />
                 This bulk order requires production (otherwise it follows the
-                existing-product workflow)
+                existing product workflow)
               </label>
             ) : null}
 

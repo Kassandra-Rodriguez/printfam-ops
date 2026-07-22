@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Check, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StatusBadge } from "@/components/status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { WorkflowEntityType, WorkflowStatus } from "@/server/data/workflow";
 import { renameStatusAction, moveStatusAction, setStatusInventoryTriggerAction } from "./actions";
@@ -15,7 +14,7 @@ import { renameStatusAction, moveStatusAction, setStatusInventoryTriggerAction }
 const ENTITY_TYPE_LABELS: Record<WorkflowEntityType, string> = {
   request: "Requests",
   order_custom: "Custom orders",
-  order_existing_product: "Existing-product orders",
+  order_existing_product: "Existing product orders",
   order_service: "Service orders",
   repair_ticket: "Repair tickets",
   quote: "Quotes",
@@ -33,18 +32,15 @@ export function WorkflowEditor({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [labelDraft, setLabelDraft] = useState("");
 
-  function saveLabel(statusId: string) {
-    if (!labelDraft.trim()) return;
+  function saveLabel(statusId: string, label: string, previousLabel: string) {
+    if (!label.trim() || label === previousLabel) return;
     startTransition(async () => {
-      const result = await renameStatusAction(statusId, labelDraft);
+      const result = await renameStatusAction(statusId, label);
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      setEditingId(null);
       router.refresh();
     });
   }
@@ -73,24 +69,28 @@ export function WorkflowEditor({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-1.5">
-        {(Object.keys(ENTITY_TYPE_LABELS) as WorkflowEntityType[]).map((et) => (
-          <Button key={et} asChild size="sm" variant={et === entityType ? "default" : "outline"}>
-            <Link href={`/settings?workflowEntity=${et}`}>{ENTITY_TYPE_LABELS[et]}</Link>
-          </Button>
-        ))}
+      <div>
+        <p className="mb-2 text-xs font-medium text-muted-foreground">Applies to</p>
+        <div className="flex flex-wrap gap-1.5">
+          {(Object.keys(ENTITY_TYPE_LABELS) as WorkflowEntityType[]).map((et) => (
+            <Button key={et} asChild size="sm" variant={et === entityType ? "default" : "outline"}>
+              <Link href={`/settings?tab=workflow&workflowEntity=${et}`}>{ENTITY_TYPE_LABELS[et]}</Link>
+            </Button>
+          ))}
+        </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="flex flex-col gap-2">
         {statuses.map((status, index) => (
-          <div key={status.id} className="flex items-center gap-2 border-b px-3 py-2 text-sm last:border-0">
-            <div className="flex flex-col">
+          <div key={status.id} className="flex items-center gap-3 rounded-md border p-2.5">
+            <div className="flex flex-col gap-0.5">
               <Button
                 type="button"
                 size="icon-xs"
                 variant="ghost"
                 disabled={index === 0 || isPending}
                 onClick={() => move(status.id, "up")}
+                aria-label="Move up"
               >
                 <ArrowUp className="size-3" />
               </Button>
@@ -100,47 +100,25 @@ export function WorkflowEditor({
                 variant="ghost"
                 disabled={index === statuses.length - 1 || isPending}
                 onClick={() => move(status.id, "down")}
+                aria-label="Move down"
               >
                 <ArrowDown className="size-3" />
               </Button>
             </div>
 
-            <StatusBadge label={status.label} category={status.category} />
-
-            <div className="flex flex-1 items-center gap-2">
-              {editingId === status.id ? (
-                <>
-                  <Input
-                    value={labelDraft}
-                    onChange={(e) => setLabelDraft(e.target.value)}
-                    className="h-7 max-w-56"
-                    autoFocus
-                  />
-                  <Button size="icon-xs" variant="ghost" disabled={isPending} onClick={() => saveLabel(status.id)}>
-                    <Check className="size-3.5" />
-                  </Button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    setEditingId(status.id);
-                    setLabelDraft(status.label);
-                  }}
-                >
-                  <Pencil className="size-3" />
-                  Rename
-                </button>
-              )}
-            </div>
+            <Input
+              defaultValue={status.label}
+              key={status.label}
+              onBlur={(e) => saveLabel(status.id, e.target.value, status.label)}
+              className="h-8 flex-1"
+            />
 
             {ENTITY_TYPES_WITH_INVENTORY.has(entityType) ? (
               <Select
                 value={status.inventoryTrigger ?? "none"}
                 onValueChange={(v: string) => setTrigger(status.id, v as "decrement" | "restock" | "none")}
               >
-                <SelectTrigger className="h-7 w-40 text-xs">
+                <SelectTrigger className="h-8 w-44 shrink-0 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

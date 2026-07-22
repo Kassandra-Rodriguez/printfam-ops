@@ -1,99 +1,82 @@
 import Link from "next/link";
 import { Inbox as InboxIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { LogCommunicationDialog } from "@/components/communications/log-communication-dialog";
 import { formatDateTime } from "@/lib/format";
 import { requireOrgContext } from "@/server/authz/session";
-import { listRecentCommunications } from "@/server/data/communications";
+import { listCustomersWithRecentMessage, listMessagesForCustomerThread } from "@/server/data/communications";
 import { listCustomers } from "@/server/data/customers";
+import { ThreadView } from "./thread-view";
 
-const CHANNEL_LABELS: Record<string, string> = {
-  instagram: "Instagram",
-  text: "Text",
-  tiktok_shop: "TikTok Shop",
-  shopify: "Shopify",
-  email: "Email",
-  phone: "Phone",
-  in_person: "In person",
-  other: "Other",
-};
-
-export default async function InboxPage() {
+export default async function InboxPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ customerId?: string }>;
+}) {
+  const { customerId } = await searchParams;
   const ctx = await requireOrgContext();
-  const [messages, customers] = await Promise.all([
-    listRecentCommunications(ctx.supabase, ctx.activeMembership.organization_id),
-    listCustomers(ctx.supabase, ctx.activeMembership.organization_id),
+  const organizationId = ctx.activeMembership.organization_id;
+
+  const [threadCustomers, customers] = await Promise.all([
+    listCustomersWithRecentMessage(ctx.supabase, organizationId),
+    listCustomers(ctx.supabase, organizationId),
   ]);
 
+  const selectedCustomerId = customerId ?? threadCustomers[0]?.id;
+  const messages = selectedCustomerId
+    ? await listMessagesForCustomerThread(ctx.supabase, organizationId, selectedCustomerId)
+    : [];
+  const selectedCustomer = threadCustomers.find((c) => c.id === selectedCustomerId);
+
   return (
-    <div className="mx-auto max-w-3xl p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Inbox</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Every message logged from any channel, newest first.
-          </p>
+    <div className="flex h-[calc(100vh-3.5rem)]">
+      <div className="flex w-72 shrink-0 flex-col border-r">
+        <div className="flex items-center justify-between border-b p-3">
+          <h1 className="text-sm font-semibold">Inbox</h1>
+          <LogCommunicationDialog customers={customers.map((c) => ({ id: c.id, name: c.display_name }))} />
         </div>
-        <LogCommunicationDialog customers={customers.map((c) => ({ id: c.id, name: c.display_name }))} />
+        {threadCustomers.length === 0 ? (
+          <div className="p-3">
+            <EmptyState
+              icon={InboxIcon}
+              title="No messages yet"
+              description="Log a message from any channel and it'll show up here."
+            />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            {threadCustomers.map((c) => (
+              <Link
+                key={c.id}
+                href={`/inbox?customerId=${c.id}`}
+                className={`block border-b px-3 py-2.5 text-sm hover:bg-muted/40 ${c.id === selectedCustomerId ? "bg-muted/60" : ""}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate font-medium">{c.display_name}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{formatDateTime(c.lastMessageAt).split(",")[0]}</span>
+                </div>
+                <p className="truncate text-xs text-muted-foreground">{c.lastMessage}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
-      {messages.length === 0 ? (
-        <div className="rounded-lg border">
-          <EmptyState
-            icon={InboxIcon}
-            title="No messages logged yet"
-            description="Paste in a conversation from Instagram, text, email, or anywhere else — it'll show up here and can turn into a request, order, or task."
+      <div className="flex flex-1 flex-col">
+        {selectedCustomer ? (
+          <ThreadView
+            key={selectedCustomer.id}
+            customerId={selectedCustomer.id}
+            customerName={selectedCustomer.display_name}
+            initialMessages={messages}
+            lastChannel={selectedCustomer.lastChannel}
           />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {messages.map((m) => (
-            <div key={m.id} className="rounded-lg border p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-sm">
-                  {m.conversation?.customer ? (
-                    <Link
-                      href={`/customers/${m.conversation.customer.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {m.conversation.customer.display_name}
-                    </Link>
-                  ) : (
-                    <span className="font-medium">Unknown customer</span>
-                  )}
-                  <Badge variant="secondary">{CHANNEL_LABELS[m.conversation?.channel ?? ""] ?? m.conversation?.channel}</Badge>
-                  {m.follow_up_required ? <Badge variant="outline">Needs follow-up</Badge> : null}
-                </div>
-                <span className="text-xs text-muted-foreground">{formatDateTime(m.occurred_at)}</span>
-              </div>
-              <p className="mt-2 text-sm whitespace-pre-wrap">{m.body}</p>
-              <div className="mt-2 flex items-center gap-3 text-xs">
-                {m.conversation?.related_request_id ? (
-                  <Link href={`/requests/${m.conversation.related_request_id}`} className="text-muted-foreground hover:underline">
-                    View linked request
-                  </Link>
-                ) : m.conversation?.related_order_id ? (
-                  <Link href={`/orders/${m.conversation.related_order_id}`} className="text-muted-foreground hover:underline">
-                    View linked order
-                  </Link>
-                ) : m.conversation?.related_repair_ticket_id ? (
-                  <Link href={`/repairs/${m.conversation.related_repair_ticket_id}`} className="text-muted-foreground hover:underline">
-                    View linked repair
-                  </Link>
-                ) : m.conversation?.customer ? (
-                  <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs">
-                    <Link href={`/requests/new?customerId=${m.conversation.customer.id}`}>
-                      Create request from this
-                    </Link>
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+            Select a conversation, or log a new message to get started.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

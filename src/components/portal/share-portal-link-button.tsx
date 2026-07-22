@@ -26,11 +26,7 @@ export function SharePortalLinkButton({
         toast.error(result.error);
         return;
       }
-      if (result.portalPath) {
-        setLink(`${window.location.origin}${result.portalPath}`);
-      } else {
-        toast.success("An active link already exists for this — nothing new to send.");
-      }
+      setLink(`${window.location.origin}${result.portalPath}`);
     });
   }
 
@@ -49,6 +45,10 @@ export function SharePortalLinkButton({
         >
           <Copy className="size-3.5" />
           Copy
+        </Button>
+        <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={handleClick}>
+          <LinkIcon className="size-3.5" />
+          New link
         </Button>
       </div>
     );

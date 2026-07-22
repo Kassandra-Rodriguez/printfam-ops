@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, FileText, Paperclip, Send, Upload } from "lucide-react";
+import { Check, FileText, Paperclip, RefreshCw, Send, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -92,9 +92,9 @@ export function ProofCard({
     router.refresh();
   }
 
-  function handleSend() {
+  function handleSend(forceReissue = false) {
     startTransition(async () => {
-      const result = await sendProofAction(proof.id, parent);
+      const result = await sendProofAction(proof.id, parent, forceReissue);
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -137,7 +137,7 @@ export function ProofCard({
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           {proof.approvalRequired ? <span>Gates production</span> : null}
           <span>·</span>
-          <span>{proof.visibility === "customer_visible" ? "Customer-visible" : "Internal only"}</span>
+          <span>{proof.visibility === "customer_visible" ? "Customer visible" : "Internal only"}</span>
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 text-sm">
@@ -266,10 +266,25 @@ export function ProofCard({
                   </Button>
                 </div>
               ) : (
-                <Button type="button" size="sm" disabled={isPending} onClick={handleSend}>
-                  <Send className="size-4" />
-                  Send to customer
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button type="button" size="sm" disabled={isPending} onClick={() => handleSend(false)}>
+                    <Send className="size-4" />
+                    Send to customer
+                  </Button>
+                  {latest?.sentAt ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={isPending}
+                      onClick={() => handleSend(true)}
+                      title="Generate a fresh link to copy — replaces the previous one"
+                    >
+                      <RefreshCw className="size-3.5" />
+                      Copy link again
+                    </Button>
+                  ) : null}
+                </div>
               )
             ) : null}
           </div>

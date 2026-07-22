@@ -30,9 +30,13 @@ export async function uploadProofVersionAction(
   return result;
 }
 
-export async function sendProofAction(proofId: string, parent: { orderId?: string; repairTicketId?: string }) {
+export async function sendProofAction(
+  proofId: string,
+  parent: { orderId?: string; repairTicketId?: string },
+  forceReissue: boolean = false,
+) {
   const ctx = await requireOrgContext();
-  const result = await sendProof(ctx.supabase, ctx.activeMembership.organization_id, ctx.userId, proofId);
+  const result = await sendProof(ctx.supabase, ctx.activeMembership.organization_id, ctx.userId, proofId, forceReissue);
   revalidateProofParent(parent.orderId, parent.repairTicketId);
   return result;
 }

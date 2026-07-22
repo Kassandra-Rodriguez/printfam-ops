@@ -20,27 +20,36 @@ export async function issuePortalToken(
   scopeId: string,
   createdBy: string,
   expiresInDays: number = PORTAL_TOKEN_DEFAULT_EXPIRY_DAYS,
+  forceReissue: boolean = false,
 ): Promise<{ reused: true } | { reused: false; rawToken: string }> {
   const supabase = createServiceRoleSupabaseClient();
 
   // Flow F step 2 / Flow E step 2: "generates/reuses a portal token." A
   // still-valid token for this exact scope means the customer's existing
   // link keeps working (the portal always renders current state for that
-  // scope), so there's nothing new to send.
-  const { data: existing, error: existingError } = await supabase
-    .from("portal_access_tokens")
-    .select("id")
-    .eq("organization_id", organizationId)
-    .eq("scope_type", scopeType)
-    .eq("scope_id", scopeId)
-    .is("revoked_at", null)
-    .gt("expires_at", new Date().toISOString())
-    .limit(1)
-    .maybeSingle();
-  if (existingError) throw existingError;
+  // scope), so there's nothing new to send — unless the caller explicitly
+  // wants a fresh, copyable link (forceReissue): the raw value is never
+  // stored (docs/security.md #4.2), so "let staff copy the link again"
+  // after the first display can only mean issuing a new one, which
+  // supersedes whatever was shown before.
+  if (!forceReissue) {
+    const { data: existing, error: existingError } = await supabase
+      .from("portal_access_tokens")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("scope_type", scopeType)
+      .eq("scope_id", scopeId)
+      .is("revoked_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (existingError) throw existingError;
 
-  if (existing) {
-    return { reused: true };
+    if (existing) {
+      return { reused: true };
+    }
+  } else {
+    await revokePortalTokensForScope(organizationId, scopeType, scopeId);
   }
 
   const { raw, hash } = generatePortalToken();

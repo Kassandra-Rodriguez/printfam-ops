@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Copy, Send } from "lucide-react";
+import { Copy, RefreshCw, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sendQuoteAction } from "../actions";
 
@@ -13,9 +13,9 @@ export function SendQuoteButton({ quoteId, alreadySent }: { quoteId: string; alr
   const [link, setLink] = useState<string | null>(null);
   const router = useRouter();
 
-  function handleSend() {
+  function handleSend(forceReissue = false) {
     startTransition(async () => {
-      const result = await sendQuoteAction(quoteId);
+      const result = await sendQuoteAction(quoteId, forceReissue);
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -48,9 +48,24 @@ export function SendQuoteButton({ quoteId, alreadySent }: { quoteId: string; alr
   }
 
   return (
-    <Button size="sm" disabled={isPending} onClick={handleSend}>
-      <Send className="size-4" />
-      {alreadySent ? "Resend link" : "Send to customer"}
-    </Button>
+    <div className="flex items-center gap-2">
+      <Button size="sm" disabled={isPending} onClick={() => handleSend(false)}>
+        <Send className="size-4" />
+        {alreadySent ? "Resend link" : "Send to customer"}
+      </Button>
+      {alreadySent ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          disabled={isPending}
+          onClick={() => handleSend(true)}
+          title="Generate a fresh link to copy — replaces the previous one"
+        >
+          <RefreshCw className="size-3.5" />
+          Copy link again
+        </Button>
+      ) : null}
+    </div>
   );
 }

@@ -92,11 +92,13 @@ export default async function RequestDetailPage({
               <ArrowRight className="size-4" />
             </Link>
           </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/quotes/new?fromRequestId=${request.id}&customerId=${request.customer?.id}`}>
-              Create Quote
-            </Link>
-          </Button>
+          {ctx.activeMembership.organization.enabled_modules.includes("quotes") ? (
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/quotes/new?fromRequestId=${request.id}&customerId=${request.customer?.id}`}>
+                Create Quote
+              </Link>
+            </Button>
+          ) : null}
         </div>
       )}
 

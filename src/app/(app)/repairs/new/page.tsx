@@ -21,7 +21,7 @@ export default async function NewRepairPage({
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="text-lg font-semibold">New repair</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Capture the intake details — a device already mid-repair can be entered with its
+        Capture the intake details — a device already mid repair can be entered with its
         real history instead of starting fresh.
       </p>
       <div className="mt-6">

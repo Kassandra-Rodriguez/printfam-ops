@@ -7,7 +7,7 @@ export default function LogInPage() {
       <div className="text-center">
         <h1 className="text-xl font-semibold">Log in</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Welcome back to PrintFam Ops
+          Welcome back
         </p>
       </div>
       <LogInForm />

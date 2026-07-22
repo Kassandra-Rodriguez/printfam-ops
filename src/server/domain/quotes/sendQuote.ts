@@ -10,14 +10,19 @@ export type SendQuoteResult =
 
 /**
  * docs/user_flows.md Flow E step 2. `portalPath` is null when an existing
- * unexpired link already covers this quote — nothing new to send, the
- * customer's original link keeps working (see issuePortalToken.ts).
+ * unexpired link already covers this quote and `forceReissue` is false —
+ * nothing new to send, the customer's original link keeps working (see
+ * issuePortalToken.ts). Pass `forceReissue: true` when staff explicitly
+ * wants a fresh copyable link (e.g. they didn't copy it in time) — the raw
+ * token is never stored, so a new link is the only way to get one again,
+ * and it supersedes the previous one.
  */
 export async function sendQuote(
   supabase: SupabaseClient,
   organizationId: string,
   userId: string,
   quoteId: string,
+  forceReissue: boolean = false,
 ): Promise<SendQuoteResult> {
   try {
     const { data: quote, error: quoteError } = await supabase
@@ -28,7 +33,15 @@ export async function sendQuote(
     if (quoteError || !quote) throw quoteError ?? new Error("Quote not found");
     const currentStatusKey = (quote.status as unknown as { key: string } | null)?.key;
 
-    const issued = await issuePortalToken(organizationId, quote.customer_id, "quote", quoteId, userId);
+    const issued = await issuePortalToken(
+      organizationId,
+      quote.customer_id,
+      "quote",
+      quoteId,
+      userId,
+      undefined,
+      forceReissue,
+    );
 
     if (!quote.sent_at) {
       const { error: sentError } = await supabase
